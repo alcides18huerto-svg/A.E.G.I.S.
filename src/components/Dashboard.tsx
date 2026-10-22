@@ -5,6 +5,8 @@ import SensorPanel from './SensorPanel';
 import AlertPanel from './AlertPanel';
 import QualityPanel from './QualityPanel';
 import ControlPanel from './ControlPanel';
+import HumanBody from './HumanBody';
+import ActionProtocol from './ActionProtocol';
 
 export default function Dashboard() {
   const {
@@ -126,6 +128,19 @@ export default function Dashboard() {
                 </div>
               </div>
             )}
+
+            {/* Human Body and Action Protocol */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <HumanBody
+                reading={currentReading}
+                anomalies={anomalies}
+                alerts={alerts}
+              />
+              <ActionProtocol
+                anomalies={anomalies}
+                alerts={alerts}
+              />
+            </div>
 
             {/* Tab navigation */}
             <div className="flex gap-2 border-b border-slate-800">
