@@ -1,7 +1,24 @@
 services:
+  # ---------------------------------------------------------------
+  # 1. Dashboard interactivo (React + Vite) — Static Site
+  # ---------------------------------------------------------------
+  - type: web
+    name: aegis-dashboard
+    runtime: static
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    autoDeploy: true
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+  # ---------------------------------------------------------------
+  # 2. Landing bilingüe + API ML (Flask) — Web Service
+  # ---------------------------------------------------------------
   - type: web
     name: aegis-landing
-    env: python
+    runtime: python
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --threads 4
     envVars:
