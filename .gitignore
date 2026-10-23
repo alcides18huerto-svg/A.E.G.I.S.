@@ -29,7 +29,7 @@ instance/
 
 # Virtual Environment
 .env
-.venv
+.venv/
 env/
 venv/
 ENV/
@@ -53,14 +53,15 @@ yarn-error.log*
 pnpm-debug.log*
 
 # Build
-dist/
 build/
+dist/
+.vite/
 *.log
 
-# Models (too large for GitHub)
-models/*.pkl
-models/*.joblib
-!models/.gitkeep
+# Models (generated at runtime)
+models/
+*.pkl
+*.joblib
 
 # Database
 *.db

@@ -1,0 +1,17 @@
+.git
+.gitignore
+.venv
+venv
+env
+__pycache__
+*.py[cod]
+models/
+*.pkl
+*.joblib
+*.log
+.env
+.vscode
+.idea
+.dockerignore
+Dockerfile
+docker-compose.yml

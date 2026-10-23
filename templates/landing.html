@@ -97,21 +97,21 @@
             </p>
             
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="https://aegis-demo.onrender.com" target="_blank" class="px-8 py-4 bg-gradient-to-r from-indigo-600 to-cyan-600 rounded-lg font-semibold hover:opacity-90 transition glow">
+                <a href="/api/health" target="_blank" class="px-8 py-4 bg-gradient-to-r from-indigo-600 to-cyan-600 rounded-lg font-semibold hover:opacity-90 transition glow">
                     {{ t('cta.demo') }}
                 </a>
-                <a href="https://github.com/yourusername/aegis" target="_blank" class="px-8 py-4 bg-slate-800 border border-slate-700 rounded-lg font-semibold hover:bg-slate-700 transition">
+                <a href="{{ repo_url }}" target="_blank" rel="noopener" class="px-8 py-4 bg-slate-800 border border-slate-700 rounded-lg font-semibold hover:bg-slate-700 transition">
                     {{ t('cta.github') }}
                 </a>
             </div>
         </div>
     </section>
-    
+
     <!-- Features Section -->
     <section id="overview" class="py-20 px-4 sm:px-6 lg:px-8 bg-slate-900/50">
         <div class="max-w-7xl mx-auto">
             <h2 class="text-4xl font-bold text-center mb-16">{{ t('sections.overview') }}</h2>
-            
+
             <div class="grid md:grid-cols-3 gap-8">
                 <div class="card-hover bg-slate-800/50 border border-slate-700 rounded-xl p-6">
                     <div class="text-4xl mb-4">🧠</div>
@@ -124,7 +124,7 @@
                         {% endif %}
                     </p>
                 </div>
-                
+
                 <div class="card-hover bg-slate-800/50 border border-slate-700 rounded-xl p-6">
                     <div class="text-4xl mb-4">⚡</div>
                     <h3 class="text-xl font-semibold mb-3">{{ t('features.real_time') }}</h3>
@@ -136,7 +136,7 @@
                         {% endif %}
                     </p>
                 </div>
-                
+
                 <div class="card-hover bg-slate-800/50 border border-slate-700 rounded-xl p-6">
                     <div class="text-4xl mb-4">🌐</div>
                     <h3 class="text-xl font-semibold mb-3">{{ t('features.offline') }}</h3>
@@ -148,7 +148,7 @@
                         {% endif %}
                     </p>
                 </div>
-                
+
                 <div class="card-hover bg-slate-800/50 border border-slate-700 rounded-xl p-6">
                     <div class="text-4xl mb-4">🔒</div>
                     <h3 class="text-xl font-semibold mb-3">{{ t('features.privacy') }}</h3>
@@ -160,7 +160,7 @@
                         {% endif %}
                     </p>
                 </div>
-                
+
                 <div class="card-hover bg-slate-800/50 border border-slate-700 rounded-xl p-6">
                     <div class="text-4xl mb-4">🚨</div>
                     <h3 class="text-xl font-semibold mb-3">{{ t('features.protocols') }}</h3>
@@ -172,7 +172,7 @@
                         {% endif %}
                     </p>
                 </div>
-                
+
                 <div class="card-hover bg-slate-800/50 border border-slate-700 rounded-xl p-6">
                     <div class="text-4xl mb-4">🫀</div>
                     <h3 class="text-xl font-semibold mb-3">{{ t('features.visualization') }}</h3>
@@ -187,12 +187,12 @@
             </div>
         </div>
     </section>
-    
+
     <!-- Architecture Section -->
     <section id="architecture" class="py-20 px-4 sm:px-6 lg:px-8">
         <div class="max-w-7xl mx-auto">
             <h2 class="text-4xl font-bold text-center mb-16">{{ t('sections.architecture') }}</h2>
-            
+
             <div class="grid md:grid-cols-2 gap-8">
                 <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-8">
                     <h3 class="text-2xl font-semibold mb-6">
@@ -250,7 +250,7 @@
                         </li>
                     </ol>
                 </div>
-                
+
                 <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-8">
                     <h3 class="text-2xl font-semibold mb-6">
                         {% if lang == 'es' %}Tecnologías{% else %}Technologies{% endif %}
@@ -268,10 +268,9 @@
                         <div>
                             <h4 class="font-semibold text-cyan-400 mb-2">Frontend</h4>
                             <div class="flex flex-wrap gap-2">
-                                <span class="px-3 py-1 bg-slate-700 rounded-full text-sm">React 18</span>
-                                <span class="px-3 py-1 bg-slate-700 rounded-full text-sm">TypeScript</span>
+                                <span class="px-3 py-1 bg-slate-700 rounded-full text-sm">HTML5</span>
+                                <span class="px-3 py-1 bg-slate-700 rounded-full text-sm">Jinja2</span>
                                 <span class="px-3 py-1 bg-slate-700 rounded-full text-sm">Tailwind CSS</span>
-                                <span class="px-3 py-1 bg-slate-700 rounded-full text-sm">Recharts</span>
                             </div>
                         </div>
                         <div>
@@ -295,12 +294,12 @@
             </div>
         </div>
     </section>
-    
+
     <!-- Surveillance Areas -->
     <section id="surveillance" class="py-20 px-4 sm:px-6 lg:px-8 bg-slate-900/50">
         <div class="max-w-7xl mx-auto">
             <h2 class="text-4xl font-bold text-center mb-16">{{ t('sections.surveillance') }}</h2>
-            
+
             <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div class="bg-slate-800/50 border border-red-500/30 rounded-xl p-6">
                     <div class="text-3xl mb-3">❤️</div>
@@ -312,7 +311,7 @@
                         {{ lang == 'es' and 'Protocolo: Emergencia cardíaca' or 'Protocol: Cardiac emergency' }}
                     </div>
                 </div>
-                
+
                 <div class="bg-slate-800/50 border border-amber-500/30 rounded-xl p-6">
                     <div class="text-3xl mb-3">🛡️</div>
                     <h3 class="text-xl font-semibold mb-2">{{ lang == 'es' and 'Inmunitario' or 'Immune' }}</h3>
@@ -323,7 +322,7 @@
                         {{ lang == 'es' and 'Protocolo: Fiebre / Hipoxia' or 'Protocol: Fever / Hypoxia' }}
                     </div>
                 </div>
-                
+
                 <div class="bg-slate-800/50 border border-purple-500/30 rounded-xl p-6">
                     <div class="text-3xl mb-3">🧠</div>
                     <h3 class="text-xl font-semibold mb-2">{{ lang == 'es' and 'Psicológico' or 'Psychological' }}</h3>
@@ -334,7 +333,7 @@
                         {{ lang == 'es' and 'Protocolo: Apoyo psicológico' or 'Protocol: Psychological support' }}
                     </div>
                 </div>
-                
+
                 <div class="bg-slate-800/50 border border-cyan-500/30 rounded-xl p-6">
                     <div class="text-3xl mb-3">🌡️</div>
                     <h3 class="text-xl font-semibold mb-2">{{ lang == 'es' and 'Ambiental' or 'Environmental' }}</h3>
@@ -345,7 +344,7 @@
                         {{ lang == 'es' and 'Protocolo: Ventilación / Refugio' or 'Protocol: Ventilation / Shelter' }}
                     </div>
                 </div>
-                
+
                 <div class="bg-slate-800/50 border border-orange-500/30 rounded-xl p-6">
                     <div class="text-3xl mb-3">🦴</div>
                     <h3 class="text-xl font-semibold mb-2">{{ lang == 'es' and 'Óseo' or 'Bone' }}</h3>
@@ -356,7 +355,7 @@
                         {{ lang == 'es' and 'Protocolo: Revisión de plan' or 'Protocol: Plan review' }}
                     </div>
                 </div>
-                
+
                 <div class="bg-slate-800/50 border border-slate-600 rounded-xl p-6">
                     <div class="text-3xl mb-3">📊</div>
                     <h3 class="text-xl font-semibold mb-2">{{ lang == 'es' and 'Integrado' or 'Integrated' }}</h3>
@@ -370,12 +369,12 @@
             </div>
         </div>
     </section>
-    
+
     <!-- Privacy & Security -->
     <section id="privacy" class="py-20 px-4 sm:px-6 lg:px-8">
         <div class="max-w-7xl mx-auto">
             <h2 class="text-4xl font-bold text-center mb-16">{{ t('sections.privacy') }}</h2>
-            
+
             <div class="grid md:grid-cols-2 gap-8">
                 <div class="bg-slate-800/50 border border-emerald-500/30 rounded-xl p-8">
                     <h3 class="text-2xl font-semibold mb-6 text-emerald-400">
@@ -412,7 +411,7 @@
                         </li>
                     </ul>
                 </div>
-                
+
                 <div class="bg-slate-800/50 border border-amber-500/30 rounded-xl p-8">
                     <h3 class="text-2xl font-semibold mb-6 text-amber-400">
                         {% if lang == 'es' %}Prohibiciones{% else %}Prohibitions{% endif %}
@@ -451,7 +450,7 @@
             </div>
         </div>
     </section>
-    
+
     <!-- CTA Section -->
     <section class="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-indigo-900/50 to-cyan-900/50">
         <div class="max-w-4xl mx-auto text-center">
@@ -466,16 +465,16 @@
                 {% endif %}
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="https://aegis-demo.onrender.com" target="_blank" class="px-8 py-4 bg-gradient-to-r from-indigo-600 to-cyan-600 rounded-lg font-semibold hover:opacity-90 transition glow">
+                <a href="/api/health" target="_blank" class="px-8 py-4 bg-gradient-to-r from-indigo-600 to-cyan-600 rounded-lg font-semibold hover:opacity-90 transition glow">
                     {{ t('cta.demo') }}
                 </a>
-                <a href="https://github.com/yourusername/aegis" target="_blank" class="px-8 py-4 bg-slate-800 border border-slate-700 rounded-lg font-semibold hover:bg-slate-700 transition">
+                <a href="{{ repo_url }}" target="_blank" rel="noopener" class="px-8 py-4 bg-slate-800 border border-slate-700 rounded-lg font-semibold hover:bg-slate-700 transition">
                     {{ t('cta.github') }}
                 </a>
             </div>
         </div>
     </section>
-    
+
     <!-- Footer -->
     <footer class="py-12 px-4 sm:px-6 lg:px-8 border-t border-slate-800">
         <div class="max-w-7xl mx-auto">
@@ -489,23 +488,23 @@
                 <div>
                     <h4 class="font-semibold mb-4">{{ lang == 'es' and 'Enlaces' or 'Links' }}</h4>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="https://github.com/yourusername/aegis" class="text-slate-400 hover:text-white transition">GitHub</a></li>
-                        <li><a href="https://aegis-demo.onrender.com" class="text-slate-400 hover:text-white transition">Live Demo</a></li>
-                        <li><a href="#" class="text-slate-400 hover:text-white transition">{{ t('cta.docs') }}</a></li>
+                        <li><a href="{{ repo_url }}" target="_blank" rel="noopener" class="text-slate-400 hover:text-white transition">GitHub</a></li>
+                        <li><a href="/api/health" class="text-slate-400 hover:text-white transition">API Health</a></li>
+                        <li><a href="{{ repo_url }}#readme" target="_blank" rel="noopener" class="text-slate-400 hover:text-white transition">{{ t('cta.docs') }}</a></li>
                     </ul>
                 </div>
                 <div>
                     <h4 class="font-semibold mb-4">{{ lang == 'es' and 'Tecnologías' or 'Technologies' }}</h4>
                     <div class="flex flex-wrap gap-2">
                         <span class="px-2 py-1 bg-slate-800 rounded text-xs">Python</span>
-                        <span class="px-2 py-1 bg-slate-800 rounded text-xs">React</span>
-                        <span class="px-2 py-1 bg-slate-800 rounded text-xs">ML</span>
                         <span class="px-2 py-1 bg-slate-800 rounded text-xs">Flask</span>
+                        <span class="px-2 py-1 bg-slate-800 rounded text-xs">scikit-learn</span>
+                        <span class="px-2 py-1 bg-slate-800 rounded text-xs">Render</span>
                     </div>
                 </div>
             </div>
             <div class="pt-8 border-t border-slate-800 text-center text-slate-500 text-sm">
-                <p>© 2024 A.E.G.I.S. - {{ lang == 'es' and 'Prototipo de investigación. No equivale a validación clínica.' or 'Research prototype. Not equivalent to clinical validation.' }}</p>
+                <p>© 2026 A.E.G.I.S. - {{ lang == 'es' and 'Prototipo de investigación. No equivale a validación clínica.' or 'Research prototype. Not equivalent to clinical validation.' }}</p>
                 <p class="mt-2">{{ lang == 'es' and 'Desarrollado para NASA Space Apps Challenge' or 'Developed for NASA Space Apps Challenge' }}</p>
             </div>
         </div>

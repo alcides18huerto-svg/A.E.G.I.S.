@@ -52,18 +52,18 @@ class AEGISAnomalyDetector:
         X_scaled = self.scaler.transform(X)
         
         prediction = self.model.predict(X_scaled)[0]
-        score = self.model.score_samples(X_scaled)[0]
-        
+        score = float(self.model.score_samples(X_scaled)[0])
+
         # Convert to confidence (0-1)
         confidence = abs(score) / 2.0
-        is_anomaly = prediction == -1
-        
+        is_anomaly = bool(prediction == -1)
+
         return {
             'is_anomaly': is_anomaly,
-            'confidence': min(confidence, 1.0),
-            'score': float(score)
+            'confidence': float(min(confidence, 1.0)),
+            'score': score
         }
-    
+
     def save_model(self, filepath='models/anomaly_detector.pkl'):
         """Save trained model"""
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
@@ -73,7 +73,7 @@ class AEGISAnomalyDetector:
                 'scaler': self.scaler,
                 'feature_names': self.feature_names
             }, f)
-    
+
     def load_model(self, filepath='models/anomaly_detector.pkl'):
         """Load trained model"""
         if os.path.exists(filepath):
@@ -85,6 +85,9 @@ class AEGISAnomalyDetector:
                 self.is_trained = True
                 return True
         return False
+
+# Repository URL shown on the landing page (override with REPO_URL env var)
+REPO_URL = os.environ.get('REPO_URL', 'https://github.com/').rstrip('/')
 
 # Initialize ML detector
 ml_detector = AEGISAnomalyDetector()
@@ -192,7 +195,12 @@ def get_translation(key, lang='en'):
 def landing():
     """Landing page"""
     lang = request.args.get('lang', 'en')
-    return render_template('landing.html', lang=lang, t=lambda key: get_translation(key, lang))
+    return render_template(
+        'landing.html',
+        lang=lang,
+        repo_url=REPO_URL,
+        t=lambda key: get_translation(key, lang)
+    )
 
 @app.route('/api/health')
 def health():
@@ -207,11 +215,11 @@ def health():
 @app.route('/api/translate', methods=['POST'])
 def translate():
     """Translation API endpoint"""
-    data = request.json
+    data = request.get_json(silent=True) or {}
     text = data.get('text', '')
     source_lang = data.get('source', 'en')
     target_lang = data.get('target', 'es')
-    
+
     # Simple dictionary-based translation for demo
     # In production, use googletrans or similar
     translation_map = {
@@ -234,10 +242,10 @@ def translate():
             'Protocolo': 'Protocol'
         }
     }
-    
+
     key = f'{source_lang}-{target_lang}'
     translated = translation_map.get(key, {}).get(text, text)
-    
+
     return jsonify({
         'original': text,
         'translated': translated,
@@ -248,7 +256,7 @@ def translate():
 @app.route('/api/predict', methods=['POST'])
 def predict():
     """ML prediction endpoint"""
-    data = request.json
+    data = request.get_json(silent=True) or {}
     
     # Validate input
     required_fields = ml_detector.feature_names
