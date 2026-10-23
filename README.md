@@ -22,20 +22,17 @@ A.E.G.I.S. is a health monitoring system prototype for space mission crew, devel
 
 ### Quick Start
 
-#### Landing Page (Python/Flask)
 ```bash
-cd python-web
+# Install dependencies
 pip install -r requirements.txt
+
+# Run the application
 python app.py
 ```
-Visit: http://localhost:5000
 
-#### Interactive Demo (React)
-```bash
-npm install
-npm run dev
-```
-Visit: http://localhost:5173
+Visit: http://localhost:5000
+- English: http://localhost:5000/?lang=en
+- Spanish: http://localhost:5000/?lang=es
 
 ### Deployment to Render.com
 
@@ -49,6 +46,7 @@ Visit: http://localhost:5173
    - **Build Command**: `pip install -r requirements.txt`
    - **Start Command**: `gunicorn app:app`
    - **Plan**: Free
+   - **Root Directory**: Leave empty (files are in root)
 6. Click "Create Web Service"
 
 ### API Endpoints
@@ -80,18 +78,20 @@ The anomaly detection uses **Isolation Forest** from scikit-learn:
 ### Project Structure
 ```
 aegis/
-├── python-web/           # Landing page (Flask)
-│   ├── app.py           # Main application
-│   ├── templates/       # HTML templates
-│   ├── requirements.txt
-│   ├── render.yaml      # Render.com config
-│   └── Procfile
-├── src/                 # React frontend
-│   ├── components/      # UI components
-│   ├── engine/          # ML engine
-│   └── hooks/           # React hooks
-├── README.md           # This file
-└── README_ES.md        # Spanish version
+├── app.py              # Flask application with ML
+├── templates/
+│   └── landing.html    # Bilingual landing page
+├── requirements.txt    # Python dependencies
+├── render.yaml         # Render.com configuration
+├── Procfile            # Process definition
+├── runtime.txt         # Python version
+├── Dockerfile          # Docker configuration
+├── docker-compose.yml  # Docker Compose
+├── README.md           # This file (EN/ES)
+├── DEPLOYMENT.md       # Deployment guide
+├── PROJECT_SUMMARY.md  # Project overview
+├── QUICKSTART.md       # Quick start guide
+└── CHECKLIST.md        # Pre-deployment checklist
 ```
 
 ### License
@@ -121,20 +121,17 @@ A.E.G.I.S. es un prototipo de sistema de monitorización de salud para tripulaci
 
 ### Inicio Rápido
 
-#### Landing Page (Python/Flask)
 ```bash
-cd python-web
+# Instalar dependencias
 pip install -r requirements.txt
+
+# Ejecutar la aplicación
 python app.py
 ```
-Visita: http://localhost:5000
 
-#### Demo Interactiva (React)
-```bash
-npm install
-npm run dev
-```
-Visita: http://localhost:5173
+Visita: http://localhost:5000
+- Inglés: http://localhost:5000/?lang=en
+- Español: http://localhost:5000/?lang=es
 
 ### Despliegue en Render.com
 
@@ -148,6 +145,7 @@ Visita: http://localhost:5173
    - **Comando de Build**: `pip install -r requirements.txt`
    - **Comando de Start**: `gunicorn app:app`
    - **Plan**: Free
+   - **Directorio Raíz**: Dejar vacío (archivos en la raíz)
 6. Click en "Create Web Service"
 
 ### Endpoints API
@@ -179,18 +177,20 @@ La detección de anomalías usa **Isolation Forest** de scikit-learn:
 ### Estructura del Proyecto
 ```
 aegis/
-├── python-web/           # Landing page (Flask)
-│   ├── app.py           # Aplicación principal
-│   ├── templates/       # Plantillas HTML
-│   ├── requirements.txt
-│   ├── render.yaml      # Configuración Render.com
-│   └── Procfile
-├── src/                 # Frontend React
-│   ├── components/      # Componentes UI
-│   ├── engine/          # Motor ML
-│   └── hooks/           # Hooks de React
-├── README.md           # Este archivo
-└── README_ES.md        # Versión en español
+├── app.py              # Aplicación Flask con ML
+├── templates/
+│   └── landing.html    # Landing page bilingüe
+├── requirements.txt    # Dependencias Python
+├── render.yaml         # Configuración Render.com
+├── Procfile            # Definición de proceso
+├── runtime.txt         # Versión de Python
+├── Dockerfile          # Configuración Docker
+├── docker-compose.yml  # Docker Compose
+├── README.md           # Este archivo (EN/ES)
+├── DEPLOYMENT.md       # Guía de despliegue
+├── PROJECT_SUMMARY.md  # Resumen del proyecto
+├── QUICKSTART.md       # Guía de inicio rápido
+└── CHECKLIST.md        # Lista de verificación
 ```
 
 ### Licencia
