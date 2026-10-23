@@ -42,10 +42,18 @@ git push -u origin main
 Variables de entorno (opcionales, ya incluidas en `render.yaml`):
 
 ```
-PYTHON_VERSION=3.11.0
+PYTHON_VERSION=3.11.9
 FLASK_ENV=production
 FLASK_DEBUG=false
 ```
+
+> ⚠️ **Versión de Python — obligatorio.** Render usa **Python 3.14.8** por defecto. `scikit-learn==1.3.2` no publica wheels para 3.13/3.14, así que pip intenta compilarlo desde el código fuente y falla en `_barnes_hut_tsne.pyx` / `_utils.pyx`. La versión se fija de dos formas (la variable gana sobre el archivo):
+> - Archivo `.python-version` en la raíz → `3.11.9`
+> - Variable de entorno `PYTHON_VERSION` → `3.11.9` (versión completa, sin prefijo `python-`)
+>
+> `runtime.txt` **no está soportado** por Render en servicios nativos: se ignora.
+
+Wheels disponibles por versión de Python para `scikit-learn 1.3.2`: `cp38` `cp39` `cp310` `cp311` `cp312` ✓ — `cp313` `cp314` ✗
 
 ### 3. Verificar el despliegue
 

@@ -1,5 +1,6 @@
 .git
 .gitignore
+.python-version
 .venv
 venv
 env

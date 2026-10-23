@@ -22,7 +22,7 @@ A.E.G.I.S. monitors crew physiological and environmental data and flags anomalie
 | ⚡ JSON API | Health check, ML prediction, translation and sample crew data |
 | 🔒 Privacy-oriented | Consent, restricted access and audit principles documented |
 | 🐳 Docker ready | Dockerfile and docker-compose included |
-| ☁️ Render ready | `render.yaml`, `Procfile` and `runtime.txt` included |
+| ☁️ Render ready | `render.yaml`, `Procfile` and `.python-version` included |
 
 ### Quick start
 
@@ -125,7 +125,7 @@ A.E.G.I.S. monitoriza datos fisiológicos y ambientales de la tripulación y det
 | ⚡ API JSON | Salud, predicción ML, traducción y datos de ejemplo |
 | 🔒 Orientado a privacidad | Principios de consentimiento, acceso restringido y auditoría |
 | 🐳 Listo para Docker | Dockerfile y docker-compose incluidos |
-| ☁️ Listo para Render | `render.yaml`, `Procfile` y `runtime.txt` incluidos |
+| ☁️ Listo para Render | `render.yaml`, `Procfile` y `.python-version` incluidos |
 
 ### Inicio rápido
 
@@ -205,14 +205,15 @@ Prototipo de investigación. No equivale a validación clínica ni certificació
 │   └── landing.html       # Bilingual landing page (Tailwind CDN)
 ├── requirements.txt       # Python dependencies
 ├── pyproject.toml         # Minimal metadata (Render detection)
+├── .python-version        # Python 3.11.9 (pins Render's interpreter)
 ├── Procfile               # Gunicorn process for Render
-├── runtime.txt            # Python version hint
 ├── render.yaml            # Render.com Blueprint
 ├── Dockerfile             # Container build
 ├── docker-compose.yml     # Local container setup
 ├── README.md              # This file (EN/ES)
 ├── DEPLOYMENT.md          # Render.com deployment guide
-└── .gitignore
+├── .gitignore
+└── .dockerignore
 ```
 
 ## 🎯 NASA Space Apps Challenge
