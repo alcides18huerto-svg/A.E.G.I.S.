@@ -204,6 +204,7 @@ Prototipo de investigación. No equivale a validación clínica ni certificació
 ├── templates/
 │   └── landing.html       # Bilingual landing page (Tailwind CDN)
 ├── requirements.txt       # Python dependencies
+├── pyproject.toml         # Minimal metadata (Render detection)
 ├── Procfile               # Gunicorn process for Render
 ├── runtime.txt            # Python version hint
 ├── render.yaml            # Render.com Blueprint

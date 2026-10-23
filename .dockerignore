@@ -13,5 +13,6 @@ models/
 .vscode
 .idea
 .dockerignore
+pyproject.toml
 Dockerfile
 docker-compose.yml

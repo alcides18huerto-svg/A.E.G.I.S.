@@ -1,0 +1,14 @@
+# Minimal project metadata so Render detects a Python service deterministically.
+# Dependencies are installed from requirements.txt (see render.yaml).
+
+[project]
+name = "aegis"
+version = "1.0.0"
+description = "A.E.G.I.S. - Adaptive Environmental & Guardian Intelligence System"
+requires-python = ">=3.11,<3.12"
+
+[tool.setuptools]
+py-modules = ["app"]
+
+[tool.setuptools.packages.find]
+include = []
