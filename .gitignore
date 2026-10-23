@@ -83,3 +83,5 @@ htmlcov/
 *.bak
 *.cache
 .next/
+*.png
+!assets/**/*.png
