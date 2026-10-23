@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A.E.G.I.S. - {{ t('subtitle') }}</title>
+    <meta name="description" content="{{ t('description') }}">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+        }
+        
+        .glow {
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 40px rgba(99, 102, 241, 0.2);
+        }
+        
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .animate-pulse-slow {
+            animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
+</head>
+<body class="gradient-bg text-white">
+    
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full bg-slate-900/80 backdrop-blur-md z-50 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-cyan-500 rounded-lg flex items-center justify-center font-bold">
+                        AG
+                    </div>
+                    <span class="text-xl font-bold">A.E.G.I.S.</span>
+                </div>
+                
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#overview" class="text-slate-300 hover:text-white transition">{{ t('sections.overview') }}</a>
+                    <a href="#architecture" class="text-slate-300 hover:text-white transition">{{ t('sections.architecture') }}</a>
+                    <a href="#surveillance" class="text-slate-300 hover:text-white transition">{{ t('sections.surveillance') }}</a>
+                    <a href="#privacy" class="text-slate-300 hover:text-white transition">{{ t('sections.privacy') }}</a>
+                    
+                    <!-- Language Switcher -->
+                    <div class="flex items-center space-x-2 ml-4">
+                        <a href="?lang=en" class="px-3 py-1 rounded {% if lang == 'en' %}bg-indigo-600{% else %}bg-slate-700{% endif %} text-sm">EN</a>
+                        <a href="?lang=es" class="px-3 py-1 rounded {% if lang == 'es' %}bg-indigo-600{% else %}bg-slate-700{% endif %} text-sm">ES</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Hero Section -->
+    <section class="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto text-center">
+            <div class="inline-block mb-6">
+                <span class="px-4 py-2 bg-indigo-500/20 border border-indigo-500/30 rounded-full text-sm text-indigo-300">
+                    🚀 NASA Space Apps Challenge
+                </span>
+            </div>
+            
+            <h1 class="text-6xl md:text-8xl font-bold mb-6 bg-gradient-to-r from-indigo-400 via-cyan-400 to-purple-400 bg-clip-text text-transparent">
+                {{ t('title') }}
+            </h1>
+            
+            <p class="text-xl md:text-2xl text-slate-300 mb-4 max-w-3xl mx-auto">
+                {{ t('subtitle') }}
+            </p>
+            
+            <p class="text-lg text-slate-400 mb-12 max-w-2xl mx-auto">
+                {{ t('description') }}
+            </p>
+            
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="https://aegis-demo.onrender.com" target="_blank" class="px-8 py-4 bg-gradient-to-r from-indigo-600 to-cyan-600 rounded-lg font-semibold hover:opacity-90 transition glow">
+                    {{ t('cta.demo') }}
+                </a>
+                <a href="https://github.com/yourusername/aegis" target="_blank" class="px-8 py-4 bg-slate-800 border border-slate-700 rounded-lg font-semibold hover:bg-slate-700 transition">
+                    {{ t('cta.github') }}
+                </a>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Features Section -->
+    <section id="overview" class="py-20 px-4 sm:px-6 lg:px-8 bg-slate-900/50">
+        <div class="max-w-7xl mx-auto">
+            <h2 class="text-4xl font-bold text-center mb-16">{{ t('sections.overview') }}</h2>
+            
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="card-hover bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+                    <div class="text-4xl mb-4">🧠</div>
+                    <h3 class="text-xl font-semibold mb-3">{{ t('features.ml_detection') }}</h3>
+                    <p class="text-slate-400">
+                        {% if lang == 'es' %}
+                        Detección de anomalías usando Isolation Forest y análisis de series temporales
+                        {% else %}
+                        Anomaly detection using Isolation Forest and time series analysis
+                        {% endif %}
+                    </p>
+                </div>
+                
+                <div class="card-hover bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+                    <div class="text-4xl mb-4">⚡</div>
+                    <h3 class="text-xl font-semibold mb-3">{{ t('features.real_time') }}</h3>
+                    <p class="text-slate-400">
+                        {% if lang == 'es' %}
+                        Monitoreo continuo de signos vitales con alertas instantáneas
+                        {% else %}
+                        Continuous vital signs monitoring with instant alerts
+                        {% endif %}
+                    </p>
+                </div>
+                
+                <div class="card-hover bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+                    <div class="text-4xl mb-4">🌐</div>
+                    <h3 class="text-xl font-semibold mb-3">{{ t('features.offline') }}</h3>
+                    <p class="text-slate-400">
+                        {% if lang == 'es' %}
+                        Funciona sin conexión a internet, sincroniza cuando está disponible
+                        {% else %}
+                        Works offline, syncs when connection is available
+                        {% endif %}
+                    </p>
+                </div>
+                
+                <div class="card-hover bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+                    <div class="text-4xl mb-4">🔒</div>
+                    <h3 class="text-xl font-semibold mb-3">{{ t('features.privacy') }}</h3>
+                    <p class="text-slate-400">
+                        {% if lang == 'es' %}
+                        Consentimiento explícito, acceso restringido y auditoría completa
+                        {% else %}
+                        Explicit consent, restricted access and full audit trail
+                        {% endif %}
+                    </p>
+                </div>
+                
+                <div class="card-hover bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+                    <div class="text-4xl mb-4">🚨</div>
+                    <h3 class="text-xl font-semibold mb-3">{{ t('features.protocols') }}</h3>
+                    <p class="text-slate-400">
+                        {% if lang == 'es' %}
+                        Protocolos de emergencia paso a paso para cada tipo de alerta
+                        {% else %}
+                        Step-by-step emergency protocols for each alert type
+                        {% endif %}
+                    </p>
+                </div>
+                
+                <div class="card-hover bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+                    <div class="text-4xl mb-4">🫀</div>
+                    <h3 class="text-xl font-semibold mb-3">{{ t('features.visualization') }}</h3>
+                    <p class="text-slate-400">
+                        {% if lang == 'es' %}
+                        Modelo 3D wireframe del cuerpo humano con zonas interactivas
+                        {% else %}
+                        3D wireframe human body model with interactive zones
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Architecture Section -->
+    <section id="architecture" class="py-20 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto">
+            <h2 class="text-4xl font-bold text-center mb-16">{{ t('sections.architecture') }}</h2>
+            
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-8">
+                    <h3 class="text-2xl font-semibold mb-6">
+                        {% if lang == 'es' %}Pipeline de 7 Etapas{% else %}7-Stage Pipeline{% endif %}
+                    </h3>
+                    <ol class="space-y-4">
+                        <li class="flex items-start">
+                            <span class="flex-shrink-0 w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-sm font-bold mr-4">1</span>
+                            <div>
+                                <strong>{{ lang == 'es' and 'Captura de Datos' or 'Data Capture' }}</strong>
+                                <p class="text-slate-400 text-sm">{{ lang == 'es' and 'Sensores y registros con marca temporal' or 'Sensors and records with timestamps' }}</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="flex-shrink-0 w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-sm font-bold mr-4">2</span>
+                            <div>
+                                <strong>{{ lang == 'es' and 'Control de Calidad' or 'Quality Control' }}</strong>
+                                <p class="text-slate-400 text-sm">{{ lang == 'es' and 'Validación y detección de fallos' or 'Validation and fault detection' }}</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="flex-shrink-0 w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-sm font-bold mr-4">3</span>
+                            <div>
+                                <strong>{{ lang == 'es' and 'Referencia Individual' or 'Individual Baseline' }}</strong>
+                                <p class="text-slate-400 text-sm">{{ lang == 'es' and 'Patrón personalizado por tripulante' or 'Personalized pattern per crew member' }}</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="flex-shrink-0 w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-sm font-bold mr-4">4</span>
+                            <div>
+                                <strong>{{ lang == 'es' and 'Análisis de Anomalías' or 'Anomaly Analysis' }}</strong>
+                                <p class="text-slate-400 text-sm">{{ lang == 'es' and 'ML + reglas clínicas independientes' or 'ML + independent clinical rules' }}</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="flex-shrink-0 w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-sm font-bold mr-4">5</span>
+                            <div>
+                                <strong>{{ lang == 'es' and 'Reglas de Seguridad' or 'Safety Rules' }}</strong>
+                                <p class="text-slate-400 text-sm">{{ lang == 'es' and 'Umbrales críticos independientes de IA' or 'Critical thresholds independent of AI' }}</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="flex-shrink-0 w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-sm font-bold mr-4">6</span>
+                            <div>
+                                <strong>{{ lang == 'es' and 'Interfaz de Tripulación' or 'Crew Interface' }}</strong>
+                                <p class="text-slate-400 text-sm">{{ lang == 'es' and 'Dashboard interactivo y alertas' or 'Interactive dashboard and alerts' }}</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="flex-shrink-0 w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-sm font-bold mr-4">7</span>
+                            <div>
+                                <strong>{{ lang == 'es' and 'Almacenamiento' or 'Storage' }}</strong>
+                                <p class="text-slate-400 text-sm">{{ lang == 'es' and 'Offline-first con sincronización' or 'Offline-first with sync' }}</p>
+                            </div>
+                        </li>
+                    </ol>
+                </div>
+                
+                <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-8">
+                    <h3 class="text-2xl font-semibold mb-6">
+                        {% if lang == 'es' %}Tecnologías{% else %}Technologies{% endif %}
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="font-semibold text-indigo-400 mb-2">Backend</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-3 py-1 bg-slate-700 rounded-full text-sm">Python 3.11</span>
+                                <span class="px-3 py-1 bg-slate-700 rounded-full text-sm">Flask</span>
+                                <span class="px-3 py-1 bg-slate-700 rounded-full text-sm">scikit-learn</span>
+                                <span class="px-3 py-1 bg-slate-700 rounded-full text-sm">NumPy</span>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-cyan-400 mb-2">Frontend</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-3 py-1 bg-slate-700 rounded-full text-sm">React 18</span>
+                                <span class="px-3 py-1 bg-slate-700 rounded-full text-sm">TypeScript</span>
+                                <span class="px-3 py-1 bg-slate-700 rounded-full text-sm">Tailwind CSS</span>
+                                <span class="px-3 py-1 bg-slate-700 rounded-full text-sm">Recharts</span>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-purple-400 mb-2">ML & Data</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-3 py-1 bg-slate-700 rounded-full text-sm">Isolation Forest</span>
+                                <span class="px-3 py-1 bg-slate-700 rounded-full text-sm">Z-score Analysis</span>
+                                <span class="px-3 py-1 bg-slate-700 rounded-full text-sm">Time Series</span>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-emerald-400 mb-2">Deployment</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-3 py-1 bg-slate-700 rounded-full text-sm">Render.com</span>
+                                <span class="px-3 py-1 bg-slate-700 rounded-full text-sm">Docker</span>
+                                <span class="px-3 py-1 bg-slate-700 rounded-full text-sm">GitHub</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Surveillance Areas -->
+    <section id="surveillance" class="py-20 px-4 sm:px-6 lg:px-8 bg-slate-900/50">
+        <div class="max-w-7xl mx-auto">
+            <h2 class="text-4xl font-bold text-center mb-16">{{ t('sections.surveillance') }}</h2>
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="bg-slate-800/50 border border-red-500/30 rounded-xl p-6">
+                    <div class="text-3xl mb-3">❤️</div>
+                    <h3 class="text-xl font-semibold mb-2">{{ lang == 'es' and 'Cardiovascular' or 'Cardiovascular' }}</h3>
+                    <p class="text-slate-400 text-sm mb-3">
+                        {{ lang == 'es' and 'Frecuencia cardiaca, presión arterial, HRV' or 'Heart rate, blood pressure, HRV' }}
+                    </p>
+                    <div class="text-xs text-red-300">
+                        {{ lang == 'es' and 'Protocolo: Emergencia cardíaca' or 'Protocol: Cardiac emergency' }}
+                    </div>
+                </div>
+                
+                <div class="bg-slate-800/50 border border-amber-500/30 rounded-xl p-6">
+                    <div class="text-3xl mb-3">🛡️</div>
+                    <h3 class="text-xl font-semibold mb-2">{{ lang == 'es' and 'Inmunitario' or 'Immune' }}</h3>
+                    <p class="text-slate-400 text-sm mb-3">
+                        {{ lang == 'es' and 'Temperatura, SpO2, biomarcadores' or 'Temperature, SpO2, biomarkers' }}
+                    </p>
+                    <div class="text-xs text-amber-300">
+                        {{ lang == 'es' and 'Protocolo: Fiebre / Hipoxia' or 'Protocol: Fever / Hypoxia' }}
+                    </div>
+                </div>
+                
+                <div class="bg-slate-800/50 border border-purple-500/30 rounded-xl p-6">
+                    <div class="text-3xl mb-3">🧠</div>
+                    <h3 class="text-xl font-semibold mb-2">{{ lang == 'es' and 'Psicológico' or 'Psychological' }}</h3>
+                    <p class="text-slate-400 text-sm mb-3">
+                        {{ lang == 'es' and 'Estrés, sueño, aislamiento' or 'Stress, sleep, isolation' }}
+                    </p>
+                    <div class="text-xs text-purple-300">
+                        {{ lang == 'es' and 'Protocolo: Apoyo psicológico' or 'Protocol: Psychological support' }}
+                    </div>
+                </div>
+                
+                <div class="bg-slate-800/50 border border-cyan-500/30 rounded-xl p-6">
+                    <div class="text-3xl mb-3">🌡️</div>
+                    <h3 class="text-xl font-semibold mb-2">{{ lang == 'es' and 'Ambiental' or 'Environmental' }}</h3>
+                    <p class="text-slate-400 text-sm mb-3">
+                        {{ lang == 'es' and 'CO2, radiación, ruido, temperatura' or 'CO2, radiation, noise, temperature' }}
+                    </p>
+                    <div class="text-xs text-cyan-300">
+                        {{ lang == 'es' and 'Protocolo: Ventilación / Refugio' or 'Protocol: Ventilation / Shelter' }}
+                    </div>
+                </div>
+                
+                <div class="bg-slate-800/50 border border-orange-500/30 rounded-xl p-6">
+                    <div class="text-3xl mb-3">🦴</div>
+                    <h3 class="text-xl font-semibold mb-2">{{ lang == 'es' and 'Óseo' or 'Bone' }}</h3>
+                    <p class="text-slate-400 text-sm mb-3">
+                        {{ lang == 'es' and 'Marcadores óseos, ejercicio' or 'Bone markers, exercise' }}
+                    </p>
+                    <div class="text-xs text-orange-300">
+                        {{ lang == 'es' and 'Protocolo: Revisión de plan' or 'Protocol: Plan review' }}
+                    </div>
+                </div>
+                
+                <div class="bg-slate-800/50 border border-slate-600 rounded-xl p-6">
+                    <div class="text-3xl mb-3">📊</div>
+                    <h3 class="text-xl font-semibold mb-2">{{ lang == 'es' and 'Integrado' or 'Integrated' }}</h3>
+                    <p class="text-slate-400 text-sm mb-3">
+                        {{ lang == 'es' and 'Análisis multivariable y tendencias' or 'Multivariate analysis and trends' }}
+                    </p>
+                    <div class="text-xs text-slate-300">
+                        {{ lang == 'es' and 'ML: Isolation Forest + Z-score' or 'ML: Isolation Forest + Z-score' }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Privacy & Security -->
+    <section id="privacy" class="py-20 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto">
+            <h2 class="text-4xl font-bold text-center mb-16">{{ t('sections.privacy') }}</h2>
+            
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="bg-slate-800/50 border border-emerald-500/30 rounded-xl p-8">
+                    <h3 class="text-2xl font-semibold mb-6 text-emerald-400">
+                        {% if lang == 'es' %}Principios Clave{% else %}Key Principles{% endif %}
+                    </h3>
+                    <ul class="space-y-4">
+                        <li class="flex items-start">
+                            <span class="text-emerald-400 mr-3">✓</span>
+                            <div>
+                                <strong>{{ lang == 'es' and 'Consentimiento Explícito' or 'Explicit Consent' }}</strong>
+                                <p class="text-slate-400 text-sm">{{ lang == 'es' and 'Requerido para datos sensibles' or 'Required for sensitive data' }}</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-emerald-400 mr-3">✓</span>
+                            <div>
+                                <strong>{{ lang == 'es' and 'Acceso Restringido' or 'Restricted Access' }}</strong>
+                                <p class="text-slate-400 text-sm">{{ lang == 'es' and 'Basado en roles y necesidad' or 'Role-based and need-to-know' }}</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-emerald-400 mr-3">✓</span>
+                            <div>
+                                <strong>{{ lang == 'es' and 'Almacenamiento Local' or 'Local Storage' }}</strong>
+                                <p class="text-slate-400 text-sm">{{ lang == 'es' and 'Datos sensibles no salen del dispositivo' or 'Sensitive data stays on device' }}</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-emerald-400 mr-3">✓</span>
+                            <div>
+                                <strong>{{ lang == 'es' and 'Auditoría Completa' or 'Full Audit' }}</strong>
+                                <p class="text-slate-400 text-sm">{{ lang == 'es' and 'Registro de todos los accesos' or 'Log of all access events' }}</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="bg-slate-800/50 border border-amber-500/30 rounded-xl p-8">
+                    <h3 class="text-2xl font-semibold mb-6 text-amber-400">
+                        {% if lang == 'es' %}Prohibiciones{% else %}Prohibitions{% endif %}
+                    </h3>
+                    <ul class="space-y-4">
+                        <li class="flex items-start">
+                            <span class="text-red-400 mr-3">✗</span>
+                            <div>
+                                <strong>{{ lang == 'es' and 'Sin Vigilancia Encubierta' or 'No Covert Surveillance' }}</strong>
+                                <p class="text-slate-400 text-sm">{{ lang == 'es' and 'Transparencia total en monitoreo' or 'Full transparency in monitoring' }}</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-red-400 mr-3">✗</span>
+                            <div>
+                                <strong>{{ lang == 'es' and 'Sin Uso Punitivo' or 'No Punitive Use' }}</strong>
+                                <p class="text-slate-400 text-sm">{{ lang == 'es' and 'Datos no usados para evaluaciones negativas' or 'Data not used for negative evaluations' }}</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-red-400 mr-3">✗</span>
+                            <div>
+                                <strong>{{ lang == 'es' and 'Sin Diagnóstico Automático' or 'No Automatic Diagnosis' }}</strong>
+                                <p class="text-slate-400 text-sm">{{ lang == 'es' and 'Siempre requiere revisión humana' or 'Always requires human review' }}</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-red-400 mr-3">✗</span>
+                            <div>
+                                <strong>{{ lang == 'es' and 'Sin Transferencia No Autorizada' or 'No Unauthorized Transfer' }}</strong>
+                                <p class="text-slate-400 text-sm">{{ lang == 'es' and 'Datos no enviados sin consentimiento' or 'Data not sent without consent' }}</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- CTA Section -->
+    <section class="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-indigo-900/50 to-cyan-900/50">
+        <div class="max-w-4xl mx-auto text-center">
+            <h2 class="text-4xl font-bold mb-6">
+                {% if lang == 'es' %}¿Listo para Explorar?{% else %}Ready to Explore?{% endif %}
+            </h2>
+            <p class="text-xl text-slate-300 mb-8">
+                {% if lang == 'es' %}
+                Prueba el sistema completo con datos en tiempo real y visualización 3D
+                {% else %}
+                Try the complete system with real-time data and 3D visualization
+                {% endif %}
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="https://aegis-demo.onrender.com" target="_blank" class="px-8 py-4 bg-gradient-to-r from-indigo-600 to-cyan-600 rounded-lg font-semibold hover:opacity-90 transition glow">
+                    {{ t('cta.demo') }}
+                </a>
+                <a href="https://github.com/yourusername/aegis" target="_blank" class="px-8 py-4 bg-slate-800 border border-slate-700 rounded-lg font-semibold hover:bg-slate-700 transition">
+                    {{ t('cta.github') }}
+                </a>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer class="py-12 px-4 sm:px-6 lg:px-8 border-t border-slate-800">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid md:grid-cols-3 gap-8 mb-8">
+                <div>
+                    <h4 class="font-semibold mb-4">A.E.G.I.S.</h4>
+                    <p class="text-slate-400 text-sm">
+                        {{ t('description') }}
+                    </p>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">{{ lang == 'es' and 'Enlaces' or 'Links' }}</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="https://github.com/yourusername/aegis" class="text-slate-400 hover:text-white transition">GitHub</a></li>
+                        <li><a href="https://aegis-demo.onrender.com" class="text-slate-400 hover:text-white transition">Live Demo</a></li>
+                        <li><a href="#" class="text-slate-400 hover:text-white transition">{{ t('cta.docs') }}</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">{{ lang == 'es' and 'Tecnologías' or 'Technologies' }}</h4>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-2 py-1 bg-slate-800 rounded text-xs">Python</span>
+                        <span class="px-2 py-1 bg-slate-800 rounded text-xs">React</span>
+                        <span class="px-2 py-1 bg-slate-800 rounded text-xs">ML</span>
+                        <span class="px-2 py-1 bg-slate-800 rounded text-xs">Flask</span>
+                    </div>
+                </div>
+            </div>
+            <div class="pt-8 border-t border-slate-800 text-center text-slate-500 text-sm">
+                <p>© 2024 A.E.G.I.S. - {{ lang == 'es' and 'Prototipo de investigación. No equivale a validación clínica.' or 'Research prototype. Not equivalent to clinical validation.' }}</p>
+                <p class="mt-2">{{ lang == 'es' and 'Desarrollado para NASA Space Apps Challenge' or 'Developed for NASA Space Apps Challenge' }}</p>
+            </div>
+        </div>
+    </footer>
+    
+</body>
+</html>

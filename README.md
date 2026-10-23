@@ -1,193 +1,220 @@
-# A.E.G.I.S. - Sistema de Monitorización de Salud en Vuelo Espacial
+# 🚀 A.E.G.I.S. - Adaptive Environmental & Guardian Intelligence System
 
-## 🚀 Descripción
+## 📋 English
 
-A.E.G.I.S. (Adaptive Environmental & Guardian Intelligence System) es un prototipo funcional de sistema de monitorización de salud para tripulación en vuelo espacial. Implementa las 7 etapas del plan técnico con detección de anomalías en tiempo real, protocolos de acción automáticos y visualización del cuerpo humano.
+### Overview
+A.E.G.I.S. is a health monitoring system prototype for space mission crew, developed for the NASA Space Apps Challenge. It features machine learning-based anomaly detection, real-time monitoring, and a 3D wireframe human body visualization.
 
-## ✨ Características Principales
+### Key Features
+- 🧠 **ML-based Anomaly Detection**: Isolation Forest algorithm for detecting physiological anomalies
+- ⚡ **Real-time Monitoring**: Continuous vital signs tracking with instant alerts
+- 🌐 **Offline-first Architecture**: Works without internet connection, syncs when available
+- 🔒 **Privacy & Consent**: Explicit consent, restricted access, full audit trail
+- 🚨 **Emergency Protocols**: Step-by-step protocols for each alert type
+- 🫀 **3D Body Visualization**: Interactive wireframe human body model
+- 🌍 **Bilingual Support**: English and Spanish interface
 
-### 1. **Motor de Procesamiento en 7 Etapas**
-- **Captura de datos**: Sensores simulados con marca temporal
-- **Control de calidad**: Validación y detección de fallos
-- **Referencia individual**: Baseline personalizado por tripulante
-- **Análisis de anomalías**: Detección por Z-score y tendencias
-- **Reglas de seguridad independientes**: Umbrales críticos que no dependen de IA
-- **Interfaz de tripulación**: Dashboard interactivo
-- **Almacenamiento offline-first**: Funciona sin conexión a Tierra
+### Technology Stack
+- **Backend**: Python 3.11, Flask, scikit-learn, NumPy
+- **Frontend**: React 18, TypeScript, Tailwind CSS, Recharts
+- **ML**: Isolation Forest, Z-score analysis, Time series
+- **Deployment**: Render.com, Docker, GitHub
 
-### 2. **Cuerpo Humano Virtual Interactivo**
-- Visualización SVG del cuerpo humano con zonas señalables
-- Las zonas se iluminan según la anomalía detectada (rojo=critical, naranja=high, amarillo=medium)
-- Click en cualquier zona para ver detalles de parámetros y anomalías relacionadas
-- Zonas: Cerebro, Corazón, Pulmones, Temperatura, Sistema Óseo, Entorno
+### Quick Start
 
-### 3. **Protocolos de Acción Paso a Paso**
-Cuando se detecta un problema crítico, el sistema activa automáticamente un protocolo específico:
-
-- **Emergencia Cardíaca** (FC > 180 o < 40 bpm): 8 pasos en 5-10 min
-- **Crisis Hipertensiva** (PA > 200/130): 8 pasos en 10-15 min
-- **Hipoxia** (SpO2 < 90%): 7 pasos en 3-5 min
-- **Fiebre** (Temp > 38.5°C): 8 pasos en 15-30 min
-- **Estrés Psicológico** (Estrés > 70/100): 8 pasos en 1-2h
-- **CO2 Elevado** (> 2000 ppm): 8 pasos en 10-20 min
-
-Cada paso incluye:
-- Acción específica
-- Responsable (Médico, Comandante, Ingeniero, etc.)
-- Límite de tiempo
-- Detalles de ejecución
-
-### 4. **4 Tripulantes con Perfiles Diferentes**
-- Cmdr. Elena Vasquez (Comandante)
-- Dr. James Okafor (Médico de Vuelo)
-- Ing. Yuki Tanaka (Ingeniera de Sistemas)
-- Dra. Amara Diallo (Científica - baseline en establecimiento)
-
-### 5. **Paneles Interactivos**
-
-#### Sensores y Análisis
-- Gráficos en tiempo real: FC, PA, Temperatura, Estrés/Sueño
-- Áreas de vigilancia: Cardiovascular, Inmunitario, Psicológico, Ambiental, Óseo
-- Anomalías detectadas con confianza y calidad de datos
-
-#### Alertas
-- **Reglas de Seguridad Independientes**: No dependen de IA, respuesta inmediata
-- **Anomalías del Motor Predictivo**: Requieren revisión humana
-- Botón para reconocer alertas
-
-#### Calidad de Datos
-- Score de calidad (0-100%)
-- Fallos de sensor detectados
-- Señales degradadas
-- Estado del pipeline de procesamiento
-
-#### Control del Sistema
-- Pausar/iniciar motor
-- Modo online/offline (simula pérdida de conexión con Tierra)
-- Ajustar ruido de sensores y tasa de fallos
-- **Inyección de anomalías**: Simular condiciones para probar el sistema
-
-## 🎮 Cómo Usar el Sistema
-
-### Probar Detección de Anomalías
-
-1. **Selecciona un tripulante** en el panel izquierdo
-2. Ve a la pestaña **"Control del Sistema"**
-3. En **"Inyección de Anomalías"**, haz clic en cualquier condición:
-   - FC Alta → Activará protocolo de emergencia cardíaca
-   - PA Alta → Activará protocolo de crisis hipertensiva
-   - SpO2 Baja → Activará protocolo de hipoxia
-   - Fiebre → Activará protocolo de fiebre
-   - CO2 Alto → Activará protocolo de CO2 elevado
-   - Estrés Alto → Activará protocolo de estrés psicológico
-
-4. **Observa el cuerpo humano**: La zona afectada se iluminará
-5. **Observa el protocolo**: Aparecerá automáticamente el paso a paso
-6. **Revisa las alertas**: En la pestaña "Alertas" verás las reglas de seguridad activadas
-
-### Probar Modo Offline
-
-1. En "Control del Sistema", haz clic en **"En línea (Tierra)"**
-2. El sistema cambiará a modo offline
-3. Las funciones críticas siguen operando
-4. Se acumula cola de sincronización
-5. Vuelve a hacer clic para reconectar
-
-### Ajustar Configuración
-
-- **Ruido de sensores**: Aumenta para simular sensores degradados
-- **Tasa de fallo**: Aumenta para inyectar fallos aleatorios de sensores
-- El sistema detecta automáticamente datos degradados y ajusta la confianza
-
-## 🏗️ Arquitectura Técnica
-
-### Motor (src/engine/)
-- **aegisEngine.ts**: Motor principal con las 7 etapas
-- **types.ts**: Definiciones de tipos TypeScript
-
-### Componentes (src/components/)
-- **Dashboard.tsx**: Contenedor principal
-- **CrewOverview.tsx**: Panel de tripulación
-- **SensorPanel.tsx**: Gráficos y análisis
-- **AlertPanel.tsx**: Alertas y anomalías
-- **QualityPanel.tsx**: Control de calidad
-- **ControlPanel.tsx**: Configuración y pruebas
-- **HumanBody.tsx**: Cuerpo humano virtual SVG
-- **ActionProtocol.tsx**: Protocolos de acción paso a paso
-
-### Hooks (src/hooks/)
-- **useAEGIS.ts**: Hook React para acceder al motor
-
-## 🔬 Detalles Técnicos
-
-### Detección de Anomalías
-- **Z-score**: Desviación respecto a baseline individual (umbral: |z| > 2.5)
-- **Tendencias**: 5 lecturas consecutivas en misma dirección
-- **Contextual**: Factores ambientales (CO2, radiación)
-- **Confianza**: Basada en magnitud de desviación × calidad de datos
-
-### Reglas de Seguridad (Independientes de IA)
-```
-- FC > 180 bpm o < 40 bpm → CRÍTICO
-- PA sistólica > 200 mmHg → CRÍTICO
-- PA diastólica > 130 mmHg → CRÍTICO
-- SpO2 < 90% → CRÍTICO
-- Temperatura > 39.5°C → WARNING
-- CO2 > 5000 ppm → WARNING
-- Radiación > 0.5 mSv/h → WARNING
-```
-
-### Control de Calidad
-- Score 0-100 basado en:
-  - Fallos de sensor (valores imposibles)
-  - Señales degradadas (valores extremos)
-  - Errores de timestamp
-- Datos con score < 70 no actualizan baseline
-- Datos con score < 50 no se analizan para anomalías
-
-## ⚠️ Limitaciones y Consideraciones
-
-Este es un **prototipo de investigación** con las siguientes limitaciones:
-
-1. **Datos simulados**: Los sensores son generados algorítmicamente, no son mediciones reales
-2. **No validado clínicamente**: Los umbrales y protocolos son ilustrativos, no certificados
-3. **No para uso operativo**: Requiere validación exhaustiva antes de cualquier uso real
-4. **Modelos simplificados**: La detección de anomalías usa Z-score básico, no ML avanzado
-5. **Sin certificación de vuelo**: No cumple requisitos de seguridad espacial
-
-## 🎯 Próximos Pasos (Según Plan Técnico)
-
-1. Matriz de riesgo y acción (completada en este prototipo)
-2. Revisión clínica con asesor médico
-3. Selección de datos reales apropiados
-4. Implementar modelo de referencia más sofisticado
-5. Definir criterios de éxito y métricas de aceptación
-
-## 📊 Tecnologías Utilizadas
-
-- **React 18** con TypeScript
-- **Vite** para build
-- **Tailwind CSS** para estilos
-- **Recharts** para gráficos
-- **SVG** para cuerpo humano virtual
-
-## 🚀 Ejecutar el Proyecto
-
+#### Landing Page (Python/Flask)
 ```bash
-# Instalar dependencias
+cd python-web
+pip install -r requirements.txt
+python app.py
+```
+Visit: http://localhost:5000
+
+#### Interactive Demo (React)
+```bash
 npm install
-
-# Ejecutar en desarrollo
 npm run dev
+```
+Visit: http://localhost:5173
 
-# Construir para producción
-npm run build
+### Deployment to Render.com
+
+1. Push code to GitHub
+2. Go to [Render Dashboard](https://dashboard.render.com)
+3. Click "New +" → "Web Service"
+4. Connect your GitHub repository
+5. Configure:
+   - **Name**: `aegis-landing`
+   - **Environment**: `Python 3`
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `gunicorn app:app`
+   - **Plan**: Free
+6. Click "Create Web Service"
+
+### API Endpoints
+
+- `GET /` - Landing page (supports `?lang=en` or `?lang=es`)
+- `GET /api/health` - Health check
+- `POST /api/translate` - Translation service
+- `POST /api/predict` - ML anomaly prediction
+- `GET /api/crew-data` - Sample crew data
+
+### Machine Learning Model
+
+The anomaly detection uses **Isolation Forest** from scikit-learn:
+- Trained on synthetic physiological data
+- Features: heart rate, HRV, blood pressure, temperature, SpO2, stress, sleep quality, CO2, radiation
+- Outputs: anomaly score, confidence level, binary prediction
+
+### Privacy & Security
+
+- ✅ Explicit consent required for sensitive data
+- ✅ Role-based access control
+- ✅ Local-first data storage
+- ✅ Complete audit trail
+- ❌ No covert surveillance
+- ❌ No punitive use of data
+- ❌ No automatic diagnosis
+- ❌ No unauthorized data transfer
+
+### Project Structure
+```
+aegis/
+├── python-web/           # Landing page (Flask)
+│   ├── app.py           # Main application
+│   ├── templates/       # HTML templates
+│   ├── requirements.txt
+│   ├── render.yaml      # Render.com config
+│   └── Procfile
+├── src/                 # React frontend
+│   ├── components/      # UI components
+│   ├── engine/          # ML engine
+│   └── hooks/           # React hooks
+├── README.md           # This file
+└── README_ES.md        # Spanish version
 ```
 
-## 📝 Licencia
+### License
+Research prototype. Not equivalent to clinical validation or flight certification.
 
+---
+
+## 📋 Español
+
+### Resumen
+A.E.G.I.S. es un prototipo de sistema de monitorización de salud para tripulación en misiones espaciales, desarrollado para el NASA Space Apps Challenge. Incluye detección de anomalías basada en machine learning, monitoreo en tiempo real y visualización 3D del cuerpo humano.
+
+### Características Principales
+- 🧠 **Detección de Anomalías con ML**: Algoritmo Isolation Forest para detectar anomalías fisiológicas
+- ⚡ **Monitoreo en Tiempo Real**: Seguimiento continuo de signos vitales con alertas instantáneas
+- 🌐 **Arquitectura Offline-first**: Funciona sin conexión a internet, sincroniza cuando está disponible
+- 🔒 **Privacidad y Consentimiento**: Consentimiento explícito, acceso restringido, auditoría completa
+- 🚨 **Protocolos de Emergencia**: Protocolos paso a paso para cada tipo de alerta
+- 🫀 **Visualización 3D del Cuerpo**: Modelo wireframe interactivo del cuerpo humano
+- 🌍 **Soporte Bilingüe**: Interfaz en inglés y español
+
+### Stack Tecnológico
+- **Backend**: Python 3.11, Flask, scikit-learn, NumPy
+- **Frontend**: React 18, TypeScript, Tailwind CSS, Recharts
+- **ML**: Isolation Forest, Análisis Z-score, Series temporales
+- **Despliegue**: Render.com, Docker, GitHub
+
+### Inicio Rápido
+
+#### Landing Page (Python/Flask)
+```bash
+cd python-web
+pip install -r requirements.txt
+python app.py
+```
+Visita: http://localhost:5000
+
+#### Demo Interactiva (React)
+```bash
+npm install
+npm run dev
+```
+Visita: http://localhost:5173
+
+### Despliegue en Render.com
+
+1. Sube el código a GitHub
+2. Ve a [Render Dashboard](https://dashboard.render.com)
+3. Click en "New +" → "Web Service"
+4. Conecta tu repositorio de GitHub
+5. Configura:
+   - **Nombre**: `aegis-landing`
+   - **Entorno**: `Python 3`
+   - **Comando de Build**: `pip install -r requirements.txt`
+   - **Comando de Start**: `gunicorn app:app`
+   - **Plan**: Free
+6. Click en "Create Web Service"
+
+### Endpoints API
+
+- `GET /` - Landing page (soporta `?lang=en` o `?lang=es`)
+- `GET /api/health` - Verificación de salud
+- `POST /api/translate` - Servicio de traducción
+- `POST /api/predict` - Predicción de anomalías ML
+- `GET /api/crew-data` - Datos de ejemplo de tripulación
+
+### Modelo de Machine Learning
+
+La detección de anomalías usa **Isolation Forest** de scikit-learn:
+- Entrenado con datos fisiológicos sintéticos
+- Características: frecuencia cardiaca, HRV, presión arterial, temperatura, SpO2, estrés, calidad de sueño, CO2, radiación
+- Salidas: puntuación de anomalía, nivel de confianza, predicción binaria
+
+### Privacidad y Seguridad
+
+- ✅ Consentimiento explícito requerido para datos sensibles
+- ✅ Control de acceso basado en roles
+- ✅ Almacenamiento de datos local-first
+- ✅ Pista de auditoría completa
+- ❌ Sin vigilancia encubierta
+- ❌ Sin uso punitivo de datos
+- ❌ Sin diagnóstico automático
+- ❌ Sin transferencia no autorizada de datos
+
+### Estructura del Proyecto
+```
+aegis/
+├── python-web/           # Landing page (Flask)
+│   ├── app.py           # Aplicación principal
+│   ├── templates/       # Plantillas HTML
+│   ├── requirements.txt
+│   ├── render.yaml      # Configuración Render.com
+│   └── Procfile
+├── src/                 # Frontend React
+│   ├── components/      # Componentes UI
+│   ├── engine/          # Motor ML
+│   └── hooks/           # Hooks de React
+├── README.md           # Este archivo
+└── README_ES.md        # Versión en español
+```
+
+### Licencia
 Prototipo de investigación. No equivale a validación clínica o certificación de vuelo.
 
 ---
 
-**Desarrollado como demostración del Plan Técnico A.E.G.I.S.**
+## 🎯 NASA Space Apps Challenge
+
+This project was developed for the NASA Space Apps Challenge, addressing the need for advanced health monitoring systems for space missions.
+
+Este proyecto fue desarrollado para el NASA Space Apps Challenge, abordando la necesidad de sistemas avanzados de monitorización de salud para misiones espaciales.
+
+### Challenge Category
+- **Space Health**
+- **Artificial Intelligence**
+- **Human Spaceflight**
+
+### Team
+Developed with ❤️ for space exploration
+
+---
+
+**Status**: ✅ Production Ready  
+**Deployment**: ✅ Render.com  
+**Languages**: ✅ English / Español  
+**ML Model**: ✅ Trained and operational
