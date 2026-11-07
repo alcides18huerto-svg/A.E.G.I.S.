@@ -136,10 +136,7 @@ export default function Dashboard() {
                 anomalies={anomalies}
                 alerts={alerts}
               />
-              <ActionProtocol
-                anomalies={anomalies}
-                alerts={alerts}
-              />
+              <ActionProtocol />
             </div>
 
             {/* Tab navigation */}

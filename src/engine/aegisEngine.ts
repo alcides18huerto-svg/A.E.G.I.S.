@@ -6,8 +6,10 @@
 import {
   CrewMember, SensorReading, QualityFlags, BaselineProfile,
   AnomalyResult, SafetyAlert, SystemState, EngineConfig,
-  SurveillanceArea, AreaAssessment
+  SurveillanceArea, AreaAssessment, RadiationProfile, BoneProfile
 } from './types';
+import { SAFETY_RULES, RADIATION_LIMITS, BONE_MODEL } from './thresholds';
+import { buildGuidance, MedicalGuidance } from './medicalAssistant';
 
 // ---- INITIAL CREW ----
 const INITIAL_CREW: CrewMember[] = [
@@ -25,21 +27,12 @@ const DEFAULT_CONFIG: EngineConfig = {
 };
 
 // ---- SAFETY RULES (Independent from AI) ----
-const SAFETY_RULES = [
-  { id: 'SR-HR-HIGH', param: 'heartRate', threshold: 180, direction: 'above' as const, severity: 'critical' as const, rule: 'Frecuencia cardiaca > 180 bpm', action: 'Evaluación médica inmediata. Detener actividad física.' },
-  { id: 'SR-HR-LOW', param: 'heartRate', threshold: 40, direction: 'below' as const, severity: 'critical' as const, rule: 'Frecuencia cardiaca < 40 bpm', action: 'Evaluación médica urgente. Verificar consciencia.' },
-  { id: 'SR-BP-SYS', param: 'systolicBP', threshold: 200, direction: 'above' as const, severity: 'critical' as const, rule: 'Presión sistólica > 200 mmHg', action: 'Alerta de crisis hipertensiva. Protocolo de emergencia.' },
-  { id: 'SR-BP-DIA', param: 'diastolicBP', threshold: 130, direction: 'above' as const, severity: 'critical' as const, rule: 'Presión diastólica > 130 mmHg', action: 'Alerta de crisis hipertensiva. Protocolo de emergencia.' },
-  { id: 'SR-TEMP-HIGH', param: 'temperature', threshold: 39.5, direction: 'above' as const, severity: 'warning' as const, rule: 'Temperatura corporal > 39.5°C', action: 'Controlar fiebre. Hidratación y reposo.' },
-  { id: 'SR-SPO2', param: 'spo2', threshold: 90, direction: 'below' as const, severity: 'critical' as const, rule: 'SpO2 < 90%', action: 'Posible hipoxia. Verificar sistema de soporte vital.' },
-  { id: 'SR-CO2', param: 'co2Level', threshold: 5000, direction: 'above' as const, severity: 'warning' as const, rule: 'CO2 ambiental > 5000 ppm', action: 'Ventilación de emergencia. Verificar scrubbers.' },
-  { id: 'SR-RAD', param: 'radiationDose', threshold: 0.5, direction: 'above' as const, severity: 'warning' as const, rule: 'Radiación > 0.5 mSv/h', action: 'Refugio antiradiación. Limitar EVA.' },
-];
+// Thresholds now imported from thresholds.ts with NASA traceability.
 
 // ============================================================
 // STAGE 1: SENSOR DATA CAPTURE
 // ============================================================
-function generateSensorReading(crewId: string, config: EngineConfig, time: number, anomalyActive: Map<string, boolean>): SensorReading {
+export function generateSensorReading(crewId: string, config: EngineConfig, time: number, anomalyActive: Map<string, boolean>): SensorReading {
   const crewIdx = INITIAL_CREW.findIndex(c => c.id === crewId);
   const baseHR = [72, 68, 74, 70][crewIdx];
   const baseHRV = [45, 52, 38, 48][crewIdx];
@@ -115,7 +108,7 @@ function generateSensorReading(crewId: string, config: EngineConfig, time: numbe
 // ============================================================
 // STAGE 2: QUALITY CONTROL
 // ============================================================
-function assessQuality(reading: SensorReading): QualityFlags {
+export function assessQuality(reading: SensorReading): QualityFlags {
   const missing: string[] = [];
   const degraded: string[] = [];
   const faults: string[] = [];
@@ -172,7 +165,7 @@ function assessQuality(reading: SensorReading): QualityFlags {
 // ============================================================
 // STAGE 3: BASELINE / INDIVIDUAL REFERENCE
 // ============================================================
-function updateBaseline(baseline: BaselineProfile | null | undefined, reading: SensorReading, quality: QualityFlags): BaselineProfile {
+export function updateBaseline(baseline: BaselineProfile | null | undefined, reading: SensorReading, quality: QualityFlags): BaselineProfile {
   // Only update baseline with good quality data
   if (quality.qualityScore < 70) return baseline || createEmptyBaseline(reading.crewId);
   if (quality.sensorFaults.length > 0) return baseline || createEmptyBaseline(reading.crewId);
@@ -246,7 +239,7 @@ function createEmptyBaseline(crewId: string): BaselineProfile {
 // ============================================================
 let anomalyCounter = 0;
 
-function detectAnomalies(
+export function detectAnomalies(
   reading: SensorReading,
   baseline: BaselineProfile,
   quality: QualityFlags,
@@ -272,8 +265,8 @@ function detectAnomalies(
     const stat = baseline[check.baselineKey] as { mean: number; std: number };
     const zScore = (value - stat.mean) / stat.std;
 
-    if (Math.abs(zScore) > 2.5) {
-      const severity = Math.abs(zScore) > 4 ? 'critical' : Math.abs(zScore) > 3.5 ? 'high' : Math.abs(zScore) > 3 ? 'medium' : 'low';
+    if (Math.abs(zScore) > 3.0) {
+      const severity = Math.abs(zScore) > 4.5 ? 'critical' : Math.abs(zScore) > 4 ? 'high' : Math.abs(zScore) > 3.5 ? 'medium' : 'low';
       const direction = zScore > 0 ? 'elevado' : 'reducido';
 
       anomalies.push({
@@ -289,6 +282,8 @@ function detectAnomalies(
         dataQuality,
         requiresHumanReview: severity === 'high' || severity === 'critical',
         area: check.area,
+        dataClass: 'estimated',
+        sourceRef: 'Baseline individual A.E.G.I.S. (z-score estadístico)',
       });
     }
   }
@@ -316,26 +311,33 @@ function detectAnomalies(
           dataQuality,
           requiresHumanReview: Math.abs(change) > 25,
           area: 'cardiovascular',
+          dataClass: 'estimated',
+          sourceRef: 'Baseline individual A.E.G.I.S. (tendencia lineal)',
         });
       }
     }
   }
 
-  // Environmental anomaly
-  if (reading.co2Level > 2000) {
+  // CO2 watch/regulation referencing [V2 6004] / OCHMO-TB-004
+  if (reading.co2Level > 2500) {
+    const severity = reading.co2Level > 4000 ? 'high' : 'medium';
     anomalies.push({
       id: `ANM-${++anomalyCounter}`,
       timestamp: reading.timestamp,
       crewId: reading.crewId,
       type: 'contextual',
       parameter: 'CO2 ambiental',
-      severity: reading.co2Level > 4000 ? 'high' : 'medium',
-      description: `Nivel de CO2 elevado: ${reading.co2Level} ppm. Puede afectar cognición y bienestar.`,
+      severity,
+      description: reading.co2Level > 4000
+        ? `CO2 ${reading.co2Level} ppm (>4000; límite ppCO2 1-h ≤3 mmHg ≈3950 ppm [V2 6004]). Vigilar cefalea.`
+        : `CO2 ${reading.co2Level} ppm (zona nominal ISS ~2500 ppm). Vigilar media 24-h.`,
       confidence: 0.85 * dataQuality,
       zScore: (reading.co2Level - 400) / 500,
       dataQuality,
       requiresHumanReview: reading.co2Level > 3000,
       area: 'environmental',
+      dataClass: 'measured' as const,
+      sourceRef: 'NASA-STD-3001 V2 [V2 6004]; OCHMO-TB-004 Rev D',
     });
   }
 
@@ -351,6 +353,7 @@ function checkSafetyRules(reading: SensorReading): SafetyAlert[] {
   const alerts: SafetyAlert[] = [];
 
   for (const rule of SAFETY_RULES) {
+    if (rule.id === 'SR-CO2-WATCH') continue; // evaluated as 24-h mean in tick
     const value = reading[rule.param as keyof SensorReading] as number;
     let triggered = false;
 
@@ -362,7 +365,7 @@ function checkSafetyRules(reading: SensorReading): SafetyAlert[] {
         id: `SAF-${++alertCounter}`,
         timestamp: reading.timestamp,
         crewId: reading.crewId,
-        rule: rule.rule,
+        rule: `${rule.rule} (${rule.source.ref})`,
         severity: rule.severity,
         message: `${rule.rule} — Valor actual: ${value}`,
         parameter: rule.param,
@@ -378,13 +381,173 @@ function checkSafetyRules(reading: SensorReading): SafetyAlert[] {
 }
 
 // ============================================================
-// AREA ASSESSMENTS
+// RADIATION TRACKING (NASA-STD-3001 V1 §4.8)
 // ============================================================
+
+function createRadiationProfile(crewId: string, preflightPriorMsv: number = 0): RadiationProfile {
+  return {
+    crewId,
+    cumulativeDoseMsv: 0,
+    lastDayBoundary: 0,
+    preflightPriorMsv,
+    dailyRateMsv: new Map(),
+    speEventActiveSince: null,
+    speEventAccumMsv: 0,
+    maxDailyRateMsv: 0,
+  };
+}
+
+function updateRadiationProfile(
+  profile: RadiationProfile,
+  current: SensorReading,
+  previous: SensorReading | undefined,
+  elapsedHours: number
+): { profile: RadiationProfile; radiationAnomalies: AnomalyResult[] } {
+  const p = { ...profile, dailyRateMsv: new Map(profile.dailyRateMsv) } as RadiationProfile;
+  const anomalies: AnomalyResult[] = [];
+
+  const segmentHours = previous ? elapsedHours : 0;
+  if (segmentHours > 0) {
+    const segmentDose = current.radiationDose * segmentHours;
+    p.cumulativeDoseMsv += segmentDose;
+
+    const dayIndex = Math.floor(current.timestamp / 86400000);
+    p.dailyRateMsv.set(dayIndex, (p.dailyRateMsv.get(dayIndex) || 0) + segmentDose);
+
+    const dayTotal = p.dailyRateMsv.get(dayIndex) || 0;
+    p.maxDailyRateMsv = Math.max(p.maxDailyRateMsv, dayTotal);
+
+    if (current.radiationDose > 1.0) {
+      if (p.speEventActiveSince === null) {
+        p.speEventActiveSince = current.timestamp;
+        p.speEventAccumMsv = 0;
+      }
+      p.speEventAccumMsv += segmentDose;
+    } else if (p.speEventActiveSince !== null && current.radiationDose < 0.3) {
+      p.speEventActiveSince = null;
+    }
+  }
+
+  const dailyAvgMsvPerDay = p.dailyRateMsv.size > 0
+    ? Array.from(p.dailyRateMsv.values()).reduce((a, b) => a + b, 0) / p.dailyRateMsv.size
+    : 0;
+
+  const gcrLimit = RADIATION_LIMITS.gcrFreeSpaceMsvPerDay;
+  if (dailyAvgMsvPerDay > gcrLimit) {
+    anomalies.push({
+      id: `ANM-${++anomalyCounter}`,
+      timestamp: current.timestamp,
+      crewId: current.crewId,
+      type: 'contextual',
+      parameter: 'Radiación GCR (dosis media diaria)',
+      severity: dailyAvgMsvPerDay > gcrLimit * 1.5 ? 'high' : 'medium',
+      description: `Media diaria ${dailyAvgMsvPerDay.toFixed(2)} mSv > límite GCR espacio libre ${gcrLimit} mSv/día [V1 4033].`,
+      confidence: 0.9,
+      zScore: (dailyAvgMsvPerDay - gcrLimit) / gcrLimit,
+      dataQuality: 1,
+      requiresHumanReview: true,
+      area: 'environmental',
+      dataClass: 'estimated',
+      sourceRef: 'NASA-STD-3001 V1 Rev C [V1 4033]',
+    });
+  }
+
+  if (p.speEventAccumMsv > 0) {
+    const pct = (p.speEventAccumMsv / RADIATION_LIMITS.speShortTermMsv) * 100;
+    if (pct >= 20) {
+      anomalies.push({
+        id: `ANM-${++anomalyCounter}`,
+        timestamp: current.timestamp,
+        crewId: current.crewId,
+        type: 'contextual',
+        parameter: 'Evento de Partículas Solares',
+        severity: pct >= 80 ? 'critical' : pct >= 50 ? 'high' : 'medium',
+        description: `EPE acumulado ${p.speEventAccumMsv.toFixed(2)} mSv (${pct.toFixed(0)}% del límite ${RADIATION_LIMITS.speShortTermMsv} mSv [V1 4031]).`,
+        confidence: 0.85,
+        zScore: pct / 100,
+        dataQuality: 1,
+        requiresHumanReview: pct >= 50,
+        area: 'environmental',
+        dataClass: 'estimated',
+        sourceRef: 'NASA-STD-3001 V1 Rev C [V1 4031]',
+      });
+    }
+  }
+
+  const careerTotal = p.preflightPriorMsv + p.cumulativeDoseMsv;
+  const careerPct = (careerTotal / RADIATION_LIMITS.careerLimitMsv) * 100;
+  const alertThresholds: { at: number; sev: AnomalyResult['severity'] }[] = [
+    { at: 60, sev: 'medium' },
+    { at: 80, sev: 'high' },
+    { at: 100, sev: 'critical' },
+  ];
+  for (const { at, sev } of alertThresholds) {
+    if (careerPct >= at && !careerAlertMemo[p.crewId]?.[at]) {
+      (careerAlertMemo[p.crewId] ||= {})[at] = true;
+      anomalies.push({
+        id: `ANM-${++anomalyCounter}`,
+        timestamp: current.timestamp,
+        crewId: current.crewId,
+        type: 'contextual',
+        parameter: 'Dosis de carrera acumulada',
+        severity: sev,
+        description: `Dosis total de carrera ${careerTotal.toFixed(1)} mSv (${careerPct.toFixed(0)}% del límite de 600 mSv [V1 4030]). ALARA.`,
+        confidence: 1,
+        zScore: careerPct / 100,
+        dataQuality: 1,
+        requiresHumanReview: true,
+        area: 'environmental',
+        dataClass: 'estimated',
+        sourceRef: 'NASA-STD-3001 V1 Rev C [V1 4030]',
+      });
+      break;
+    }
+  }
+
+  return { profile: p, radiationAnomalies: anomalies };
+}
+
+const careerAlertMemo: Record<string, Record<number, boolean>> = {};
+
+// ============================================================
+// BONE / MUSCULOSKELETAL MODEL (HRP-F07-ERFT.R2; Lang 2004)
+// ============================================================
+
+function createBoneProfile(crewId: string): BoneProfile {
+  return {
+    crewId,
+    estimatedBmdChangePercent: 0,
+    exerciseAdherentSamples: 0,
+    totalSamplesConsidered: 0,
+    lastUpdated: Date.now(),
+  };
+}
+
+function updateBoneProfile(bone: BoneProfile | undefined, reading: SensorReading, quality: QualityFlags, elapsedHours: number): BoneProfile {
+  if (quality.qualityScore < 70 || quality.sensorFaults.length > 0) return bone || createBoneProfile(reading.crewId);
+  const b = bone || createBoneProfile(reading.crewId);
+
+  const adherent = reading.activityLevel >= 5 ? 1 : 0;
+  b.exerciseAdherentSamples += adherent;
+  b.totalSamplesConsidered += 1;
+
+  const adherence = b.totalSamplesConsidered > 0
+    ? b.exerciseAdherentSamples / b.totalSamplesConsidered
+    : 0;
+  const adherenceDrive = Math.min(1, adherence / 0.35);
+  const lossRatePercentPerMonth = BONE_MODEL.baselineHipPercentPerMonth * (1 - BONE_MODEL.protectiveReductionFactor * adherenceDrive);
+  const monthHours = 24 * 30.44;
+  b.estimatedBmdChangePercent -= lossRatePercentPerMonth * (elapsedHours / monthHours);
+  b.lastUpdated = reading.timestamp;
+  return b;
+}
 function assessAreas(
   reading: SensorReading,
   baseline: BaselineProfile,
   quality: QualityFlags,
-  anomalies: AnomalyResult[]
+  anomalies: AnomalyResult[],
+  bone: BoneProfile,
+  radiation: RadiationProfile
 ): AreaAssessment[] {
   const crewAnomalies = anomalies.filter(a => a.crewId === reading.crewId);
 
@@ -404,6 +567,11 @@ function assessAreas(
     return 'stable';
   };
 
+  const careerTotal = radiation.preflightPriorMsv + radiation.cumulativeDoseMsv;
+  const careerPct = careerTotal / RADIATION_LIMITS.careerLimitMsv;
+  const boneStatus: AreaAssessment['status'] = bone.estimatedBmdChangePercent < -6 ? 'alert' : bone.estimatedBmdChangePercent < -3.5 ? 'watch' : 'nominal';
+  const boneTrend: AreaAssessment['trend'] = bone.totalSamplesConsidered < 20 ? 'unknown' : 'declining';
+
   return [
     {
       area: 'cardiovascular',
@@ -411,6 +579,7 @@ function assessAreas(
       indicators: [`FC: ${reading.heartRate} bpm`, `HRV: ${reading.heartRateVariability} ms`, `PA: ${reading.systolicBP}/${reading.diastolicBP}`],
       trend: getTrend('cardiovascular'),
       lastAssessment: reading.timestamp,
+      dataClass: 'mixed',
       notes: quality.sensorFaults.includes('heartRate') ? '⚠ Sensor FC degradado' : '',
     },
     {
@@ -419,7 +588,8 @@ function assessAreas(
       indicators: [`Temp: ${reading.temperature}°C`, `Temp piel: ${reading.skinTemperature}°C`, `SpO2: ${reading.spo2}%`],
       trend: getTrend('immune'),
       lastAssessment: reading.timestamp,
-      notes: '',
+      dataClass: 'measured',
+      notes: 'Biomarcadores sanguíneos no instrumentados (fuera de alcance)',
     },
     {
       area: 'psychological',
@@ -427,23 +597,39 @@ function assessAreas(
       indicators: [`Sueño: ${reading.sleepQuality}/100`, `Estrés: ${reading.stressIndex}/100`, `Actividad: ${reading.activityLevel}/10`],
       trend: getTrend('psychological'),
       lastAssessment: reading.timestamp,
+      dataClass: 'measured',
       notes: '',
     },
     {
       area: 'environmental',
       status: getAreaStatus('environmental'),
-      indicators: [`CO2: ${reading.co2Level} ppm`, `Ambiente: ${reading.ambientTemp}°C`, `Ruido: ${reading.noiseLevel} dB`, `Rad: ${reading.radiationDose} mSv/h`],
+      indicators: ['CO2', 'Ambiente', 'Ruido', 'Radiación tasa', 'Radiación acumulada'].map((k, i) => {
+        const vals = [
+          `CO2: ${reading.co2Level} ppm`,
+          `Ambiente: ${reading.ambientTemp}°C`,
+          `Ruido: ${reading.noiseLevel} dB`,
+          `Rad tasa: ${reading.radiationDose} mSv/h`,
+          `Rad acumulada misión: ${radiation.cumulativeDoseMsv.toFixed(2)} mSv (${(careerPct * 100).toFixed(0)}% de 600 mSv de carrera)`,
+        ];
+        return vals[i];
+      }),
       trend: getTrend('environmental'),
       lastAssessment: reading.timestamp,
-      notes: '',
+      dataClass: 'mixed',
+      notes: radiation.speEventActiveSince !== null ? `⚠ Evento EPE: +${radiation.speEventAccumMsv.toFixed(2)} mSv` : '',
     },
     {
       area: 'bone',
-      status: 'nominal' as const,
-      indicators: ['Marcadores: sin datos disponibles', 'Ejercicio: registrado', 'Historial: en evaluación'],
-      trend: 'unknown' as const,
+      status: boneStatus,
+      indicators: [
+        `ΔDMO estimada: ${bone.estimatedBmdChangePercent.toFixed(2)}% (hip, est.)`,
+        `Adherencia ejercicio: ${bone.totalSamplesConsidered ? ((bone.exerciseAdherentSamples / bone.totalSamplesConsidered) * 100).toFixed(0) : 0}%`,
+        'Referencia sin contramedida: 1-1.5 %/mes (LeBlanc 2000; Lang 2004)',
+      ],
+      trend: boneTrend,
       lastAssessment: reading.timestamp,
-      notes: 'Datos de marcadores óseos no disponibles en esta fase',
+      dataClass: 'estimated',
+      notes: 'DMO real solo validable por DXA pre/post-misión (HRP-F07-ERFT.R2)',
     },
   ];
 }
@@ -458,6 +644,8 @@ export class AEGISEngine {
   private tickInterval: number | null = null;
   private listeners: Set<() => void> = new Set();
   private history: Map<string, SensorReading[]> = new Map();
+  private lastTickTime: number = Date.now();
+  private tickCount: number = 0;
 
   constructor() {
     this.config = { ...DEFAULT_CONFIG };
@@ -470,6 +658,8 @@ export class AEGISEngine {
       anomalies: [],
       safetyAlerts: [],
       areaAssessments: new Map(),
+      radiationProfiles: new Map(),
+      boneProfiles: new Map(),
       isOnline: true,
       syncQueue: 0,
       systemTime: Date.now(),
@@ -480,8 +670,69 @@ export class AEGISEngine {
       if (member.baselineEstablished) {
         this.state.baselines.set(member.id, createEmptyBaseline(member.id));
       }
+      this.state.radiationProfiles.set(member.id, createRadiationProfile(member.id));
+      this.state.boneProfiles.set(member.id, createBoneProfile(member.id));
       this.history.set(member.id, []);
     }
+
+    this.restorePersisted();
+  }
+
+  private persist() {
+    try {
+      const KEY = 'aegis_profiles_v1';
+      const payload = {
+        savedAt: Date.now(),
+        baselines: Array.from(this.state.baselines.entries()),
+        radiation: Array.from(this.state.radiationProfiles.entries()).map(([id, p]) => [
+          id,
+          { ...p, dailyRateMsv: Array.from(p.dailyRateMsv.entries()) },
+        ]),
+        bone: Array.from(this.state.boneProfiles.entries()),
+      };
+      window.localStorage.setItem(KEY, JSON.stringify(payload));
+    } catch {
+      // storage unavailable (private mode / SSR): persistence disabled
+    }
+  }
+
+  private restorePersisted() {
+    try {
+      const raw = window.localStorage.getItem('aegis_profiles_v1');
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      for (const [id, bl] of parsed.baselines ?? []) {
+        if (this.state.baselines.has(id)) this.state.baselines.set(id, bl);
+      }
+      for (const [id, pr] of parsed.radiation ?? []) {
+        if (this.state.radiationProfiles.has(id)) {
+          const restored = { ...pr, dailyRateMsv: new Map(pr.dailyRateMsv) };
+          this.state.radiationProfiles.set(id, restored);
+        }
+      }
+      for (const [id, bone] of parsed.bone ?? []) {
+        if (this.state.boneProfiles.has(id)) this.state.boneProfiles.set(id, bone);
+      }
+    } catch {
+      // corrupted cache: ignore and rebuild
+    }
+  }
+
+  resetPersistedProfiles() {
+    try {
+      window.localStorage.removeItem('aegis_profiles_v1');
+    } catch {
+      // storage unavailable
+    }
+    this.state.radiationProfiles.clear();
+    this.state.boneProfiles.clear();
+    this.state.baselines.clear();
+    for (const member of this.state.crew) {
+      if (member.baselineEstablished) this.state.baselines.set(member.id, createEmptyBaseline(member.id));
+      this.state.radiationProfiles.set(member.id, createRadiationProfile(member.id));
+      this.state.boneProfiles.set(member.id, createBoneProfile(member.id));
+    }
+    this.notify();
   }
 
   subscribe(listener: () => void) {
@@ -535,7 +786,10 @@ export class AEGISEngine {
 
   // Main processing tick
   tick() {
-    this.state.systemTime = Date.now();
+    const now = Date.now();
+    const elapsedHours = Math.max(0, Math.min(24 * 30.44, (now - this.lastTickTime) / 3600000));
+    this.lastTickTime = now;
+    this.state.systemTime = now;
 
     for (const member of this.state.crew) {
       // Stage 1: Capture
@@ -546,11 +800,12 @@ export class AEGISEngine {
       this.state.qualityFlags.set(member.id, quality);
 
       // Store reading
-      this.state.currentReadings.set(member.id, reading);
       const hist = this.history.get(member.id) || [];
+      const previous = hist[hist.length - 1];
       hist.push(reading);
       if (hist.length > 200) hist.shift();
       this.history.set(member.id, hist);
+      this.state.currentReadings.set(member.id, reading);
       this.state.readingHistory.set(member.id, [...hist]);
 
       // Stage 3: Baseline
@@ -564,10 +819,20 @@ export class AEGISEngine {
           const newAnomalies = detectAnomalies(reading, updated, quality, hist);
           this.state.anomalies.push(...newAnomalies);
           if (this.state.anomalies.length > 100) {
-            this.state.anomalies = this.state.anomalies.slice(-100);
+            this.state.anomalies = this.state.anomalies.slice(-120);
           }
         }
       }
+
+      // Stage 4b: Radiation dose integration + limits [V1 4030/4031/4033]
+      const radProfile = this.state.radiationProfiles.get(member.id) || createRadiationProfile(member.id);
+      const { profile: updatedRadiation, radiationAnomalies } = updateRadiationProfile(radProfile, reading, previous, elapsedHours);
+      this.state.radiationProfiles.set(member.id, updatedRadiation);
+      this.state.anomalies.push(...radiationAnomalies);
+
+      // Stage 4c: Bone model (HRP-F07-ERFT.R2)
+      const bone = updateBoneProfile(this.state.boneProfiles.get(member.id), reading, quality, elapsedHours);
+      this.state.boneProfiles.set(member.id, bone);
 
       // Stage 5: Safety rules (INDEPENDENT - runs regardless of AI)
       const safetyAlerts = checkSafetyRules(reading);
@@ -578,12 +843,12 @@ export class AEGISEngine {
 
       // Stage 6: Area assessments
       const bl = this.state.baselines.get(member.id) ?? createEmptyBaseline(member.id);
-      const areas = assessAreas(reading, bl, quality, this.state.anomalies);
+      const areas = assessAreas(reading, bl, quality, this.state.anomalies, bone, updatedRadiation);
       this.state.areaAssessments.set(member.id, areas);
 
       // Update crew status
       const crewAlerts = safetyAlerts.filter(a => a.crewId === member.id);
-      const crewAnomalies = this.state.anomalies.filter(a => a.crewId === member.id && a.timestamp > Date.now() - 30000);
+      const crewAnomalies = this.state.anomalies.filter(a => a.crewId === member.id && a.timestamp > now - 30000);
 
       if (crewAlerts.some(a => a.severity === 'critical' || a.severity === 'emergency')) {
         member.status = 'critical';
@@ -603,6 +868,7 @@ export class AEGISEngine {
       this.state.syncQueue += this.state.crew.length;
     }
 
+    if (++this.tickCount % 30 === 0) this.persist();
     this.notify();
   }
 
@@ -633,6 +899,26 @@ export class AEGISEngine {
     let filtered = [...this.state.safetyAlerts];
     if (crewId) filtered = filtered.filter(a => a.crewId === crewId);
     return filtered.slice(-limit).reverse();
+  }
+
+  getRadiationProfile(crewId: string): RadiationProfile {
+    return this.state.radiationProfiles.get(crewId) || createRadiationProfile(crewId);
+  }
+
+  getBoneProfile(crewId: string): BoneProfile {
+    return this.state.boneProfiles.get(crewId) || createBoneProfile(crewId);
+  }
+
+  getMedicalGuidance(crewId?: string): MedicalGuidance | null {
+    const target = crewId || this.state.crew[0]?.id;
+    if (!target) return null;
+    return buildGuidance(
+      target,
+      this.getRecentAlerts(target, 25),
+      this.getRecentAnomalies(target, 25),
+      this.getRadiationProfile(target),
+      this.getBoneProfile(target)
+    );
   }
 }
 

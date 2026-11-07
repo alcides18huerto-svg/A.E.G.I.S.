@@ -61,11 +61,13 @@ export interface AnomalyResult {
   parameter: string;
   severity: 'info' | 'low' | 'medium' | 'high' | 'critical';
   description: string;
-  confidence: number;       // 0-1
+  confidence: number;       // 0-1 confidence index (not a calibrated probability)
   zScore: number;
   dataQuality: number;      // 0-1
   requiresHumanReview: boolean;
   area: SurveillanceArea;
+  dataClass: 'measured' | 'estimated';
+  sourceRef: string;
 }
 
 export interface SafetyAlert {
@@ -89,6 +91,25 @@ export type SurveillanceArea =
   | 'psychological'
   | 'environmental';
 
+export interface RadiationProfile {
+  crewId: string;
+  cumulativeDoseMsv: number;       // mission cumulative, integrated from rate
+  lastDayBoundary: number;         // timestamp when last daily summary settled
+  preflightPriorMsv: number;       // previous missions, from health profile
+  dailyRateMsv: Map<number, number>;
+  speEventActiveSince: number | null;
+  speEventAccumMsv: number;
+  maxDailyRateMsv: number;
+}
+
+export interface BoneProfile {
+  crewId: string;
+  estimatedBmdChangePercent: number;   // cumulative % change vs preflight (negative = loss)
+  exerciseAdherentSamples: number;
+  totalSamplesConsidered: number;
+  lastUpdated: number;
+}
+
 export interface AreaAssessment {
   area: SurveillanceArea;
   status: 'nominal' | 'watch' | 'alert';
@@ -96,6 +117,7 @@ export interface AreaAssessment {
   trend: 'stable' | 'improving' | 'declining' | 'unknown';
   lastAssessment: number;
   notes: string;
+  dataClass: 'measured' | 'estimated' | 'mixed';
 }
 
 export interface SystemState {
@@ -107,6 +129,8 @@ export interface SystemState {
   anomalies: AnomalyResult[];
   safetyAlerts: SafetyAlert[];
   areaAssessments: Map<string, AreaAssessment[]>;
+  radiationProfiles: Map<string, RadiationProfile>;
+  boneProfiles: Map<string, BoneProfile>;
   isOnline: boolean;
   syncQueue: number;
   systemTime: number;

@@ -1,0 +1,181 @@
+.hologram-view {
+  min-width: 0;
+  width: 100%;
+}
+
+.hologram-stage {
+  position: relative;
+  width: 100%;
+  min-height: 500px;
+  height: min(660px, 70vh);
+  overflow: hidden;
+  border: 1px solid rgba(34, 211, 238, 0.18);
+  border-radius: 1rem;
+  background:
+    radial-gradient(ellipse at 50% 56%, rgba(8, 145, 178, 0.13), transparent 40%),
+    radial-gradient(ellipse at 50% 100%, rgba(14, 116, 144, 0.16), transparent 42%),
+    linear-gradient(180deg, rgba(2, 14, 28, 0.96), rgba(2, 9, 23, 0.98));
+  box-shadow: inset 0 0 70px rgba(8, 145, 178, 0.08), 0 0 30px rgba(6, 182, 212, 0.04);
+  touch-action: none;
+  cursor: grab;
+}
+
+.hologram-stage:active {
+  cursor: grabbing;
+}
+
+.hologram-stage::before,
+.hologram-stage::after {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+}
+
+.hologram-stage::before {
+  opacity: 0.18;
+  background-image:
+    linear-gradient(rgba(34, 211, 238, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 211, 238, 0.1) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: linear-gradient(transparent, black 14%, black 86%, transparent);
+}
+
+.hologram-stage::after {
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 5px,
+    rgba(34, 211, 238, 0.025) 6px,
+    transparent 7px
+  );
+}
+
+.hologram-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.hologram-hud {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  color: rgba(103, 232, 249, 0.68);
+  font: 600 0.6rem/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.12em;
+  pointer-events: none;
+}
+
+.hologram-hud-top {
+  top: 1rem;
+  right: 1rem;
+  left: 1rem;
+}
+
+.hologram-hud-top span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.hologram-hud-top i {
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 50%;
+  background: #67e8f9;
+  box-shadow: 0 0 10px #22d3ee;
+  animation: hologram-status 1.8s ease-in-out infinite;
+}
+
+.hologram-hud-bottom {
+  right: 1rem;
+  bottom: 4.7rem;
+  left: 1rem;
+  color: rgba(148, 163, 184, 0.72);
+  font-size: 0.55rem;
+}
+
+.hologram-controls {
+  position: absolute;
+  z-index: 3;
+  right: 50%;
+  bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transform: translateX(50%);
+}
+
+.hologram-controls button {
+  min-width: 2.15rem;
+  height: 2.15rem;
+  padding: 0 0.55rem;
+  border: 1px solid rgba(71, 85, 105, 0.8);
+  border-radius: 0.65rem;
+  background: rgba(15, 23, 42, 0.84);
+  color: #a5f3fc;
+  font-size: 0.85rem;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.hologram-controls button:hover,
+.hologram-controls button:focus-visible {
+  border-color: rgba(34, 211, 238, 0.8);
+  background: rgba(8, 145, 178, 0.24);
+  color: white;
+  outline: none;
+}
+
+.hologram-controls button:last-child {
+  font-size: 0.68rem;
+}
+
+.hologram-fallback {
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2rem;
+  background: rgba(2, 6, 23, 0.94);
+  color: #bae6fd;
+  text-align: center;
+}
+
+@keyframes hologram-status {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (max-width: 640px) {
+  .hologram-stage {
+    min-height: 420px;
+    height: 58vh;
+  }
+
+  .hologram-hud {
+    font-size: 0.5rem;
+    letter-spacing: 0.08em;
+  }
+
+  .hologram-controls {
+    gap: 0.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hologram-hud-top i {
+    animation: none;
+  }
+}
