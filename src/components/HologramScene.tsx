@@ -1153,11 +1153,38 @@ export default function HologramScene({ zones, onSelectZone }: Props) {
     if (!host) return;
     let cancelled = false;
 
+    const supportsWebGL2 = (() => {
+      try {
+        const probe = document.createElement('canvas');
+        const gl = probe.getContext('webgl2');
+        if (!gl) return false;
+        gl.getExtension('WEBGL_lose_context')?.loseContext();
+        return true;
+      } catch {
+        return false;
+      }
+    })();
+
+    if (!supportsWebGL2) {
+      setRenderError(true);
+      setModelLoading(false);
+      return;
+    }
+
     // ----- Renderer -----
-    const renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      alpha: true,
-    });
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: true,
+        powerPreference: 'high-performance',
+      });
+    } catch (error) {
+      console.error('No se pudo crear el contexto WebGL del holograma', error);
+      setRenderError(true);
+      setModelLoading(false);
+      return;
+    }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
     renderer.setSize(host.clientWidth, host.clientHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -1169,6 +1196,13 @@ export default function HologramScene({ zones, onSelectZone }: Props) {
     host.prepend(renderer.domElement);
 
     rendererRef.current = renderer;
+
+    const handleContextLost = (event: Event) => {
+      event.preventDefault();
+      setRenderError(true);
+      renderer.setAnimationLoop(null);
+    };
+    renderer.domElement.addEventListener('webglcontextlost', handleContextLost);
 
     // ----- Scene -----
     const scene = new THREE.Scene();
@@ -1533,7 +1567,13 @@ export default function HologramScene({ zones, onSelectZone }: Props) {
       controls.update();
 
       // Render con postprocesamiento (bloom + aberración cromática)
-      composer.render();
+      try {
+        composer.render();
+      } catch (error) {
+        console.error('Error al renderizar el holograma', error);
+        setRenderError(true);
+        renderer.setAnimationLoop(null);
+      }
     });
 
     // ----- Return cleanup -----
@@ -1541,6 +1581,7 @@ export default function HologramScene({ zones, onSelectZone }: Props) {
       cancelled = true;
       resizeObserver.disconnect();
       renderer.setAnimationLoop(null);
+      renderer.domElement.removeEventListener('webglcontextlost', handleContextLost);
       renderer.domElement.removeEventListener('wheel', handleWheel);
       if (hudRef.current) {
         hudRef.current.dispose();
@@ -1721,6 +1762,9 @@ export default function HologramScene({ zones, onSelectZone }: Props) {
           <div className="hologram-fallback" role="status">
             <span>El navegador no pudo iniciar el renderizado 3D.</span>
             <span>Prueba con aceleración gráfica habilitada.</span>
+            <button type="button" className="hologram-fallback-action" onClick={() => window.location.reload()}>
+              Recargar
+            </button>
           </div>
         )}
         {modelLoading && !renderError && (

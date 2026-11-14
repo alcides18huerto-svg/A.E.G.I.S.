@@ -1,6 +1,7 @@
 import { lazy, Suspense, useMemo, useState } from 'react';
 import type { AnomalyResult, SafetyAlert, SensorReading } from '../engine/types';
 import type { HologramZoneState } from './HologramScene';
+import ErrorBoundary from './ErrorBoundary';
 
 const HologramScene = lazy(() => import('./HologramScene'));
 
@@ -59,39 +60,34 @@ function getSeverityColor(severity: string, area: string): string {
 export default function HumanBody({ reading, anomalies, alerts }: Props) {
   const [selectedZone, setSelectedZone] = useState<string | null>(null);
 
-  const areaMap = useMemo(() => {
-    const map: Record<string, string> = {};
-    BODY_ZONES.forEach((zone) => {
-      zone.relatedAreas.forEach((area) => {
-        map[zone.id] = area;
-      });
-    });
-    return map;
-  }, [BODY_ZONES]);
-
   const activeZones = useMemo(() => {
     const active = new Map<string, string>();
+
+    const register = (zoneId: string, severity: string) => {
+      const existing = active.get(zoneId);
+      if (!existing || SEVERITY_ORDER[severity] > SEVERITY_ORDER[existing]) {
+        active.set(zoneId, severity);
+      }
+    };
+
     anomalies.forEach((anomaly) => {
       if (anomaly.severity === 'info') return;
-      const area = areaMap[anomaly.area] || 'environmental';
-      const existing = active.get(anomaly.area);
-      if (!existing || SEVERITY_ORDER[anomaly.severity] > SEVERITY_ORDER[existing]) {
-        active.set(anomaly.area, anomaly.severity);
-      }
+      BODY_ZONES.forEach((zone) => {
+        if (zone.relatedAreas.includes(anomaly.area)) {
+          register(zone.id, anomaly.severity);
+        }
+      });
     });
 
     alerts.forEach((alert) => {
       if (alert.acknowledged) return;
       const zone = BODY_ZONES.find((z) => z.relatedParams.includes(alert.parameter));
-      const area = zone ? (zone.relatedAreas[0] || 'environmental') : 'environmental';
-      const severity = alert.severity === 'emergency' ? 'critical' : alert.severity;
-      const existing = active.get(area);
-      if (!existing || SEVERITY_ORDER[severity] > SEVERITY_ORDER[existing]) {
-        active.set(area, severity);
-      }
+      if (!zone) return;
+      register(zone.id, alert.severity === 'emergency' ? 'critical' : alert.severity);
     });
+
     return active;
-  }, [anomalies, alerts, areaMap]);
+  }, [anomalies, alerts]);
 
   const hologramZones: HologramZoneState[] = BODY_ZONES.map((zone) => {
     const severity = activeZones.get(zone.id);
@@ -130,9 +126,11 @@ export default function HumanBody({ reading, anomalies, alerts }: Props) {
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(240px,0.9fr)]">
         <div className="min-w-0">
-          <Suspense fallback={<div className="hologram-stage flex items-center justify-center text-sm text-cyan-200">Inicializando holograma 3D…</div>}>
-            <HologramScene zones={hologramZones} onSelectZone={setSelectedZone} />
-          </Suspense>
+          <ErrorBoundary title="No se pudo cargar el holograma 3D">
+            <Suspense fallback={<div className="hologram-stage flex items-center justify-center text-sm text-cyan-200">Inicializando holograma 3D…</div>}>
+              <HologramScene zones={hologramZones} onSelectZone={setSelectedZone} />
+            </Suspense>
+          </ErrorBoundary>
           <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px] text-slate-500">
             <span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-cyan-300" /> Normal</span>
             <span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-amber-400" /> Medio</span>

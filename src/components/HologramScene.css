@@ -152,6 +152,21 @@
   text-align: center;
 }
 
+.hologram-fallback-action {
+  margin-top: 0.5rem;
+  border: 1px solid rgba(34, 211, 238, 0.4);
+  border-radius: 0.5rem;
+  background: rgba(34, 211, 238, 0.1);
+  padding: 0.4rem 0.9rem;
+  color: #a5f3fc;
+  font-size: 0.75rem;
+  transition: background 150ms ease;
+}
+
+.hologram-fallback-action:hover {
+  background: rgba(34, 211, 238, 0.2);
+}
+
 @keyframes hologram-status {
   50% {
     opacity: 0.35;
