@@ -112,14 +112,14 @@ export default function Sidebar({
                   onClose();
                 }}
                 aria-current={isActive ? 'page' : undefined}
-                className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-colors ${
+                className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-colors duration-200 ${
                   isActive
-                    ? 'bg-indigo-500/15 text-indigo-200 ring-1 ring-inset ring-indigo-500/30'
-                    : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
+                    ? 'bg-indigo-500/15 font-medium text-indigo-200 shadow-lg shadow-indigo-500/20 ring-1 ring-inset ring-indigo-500/30'
+                    : 'text-slate-400 hover:bg-slate-800/70 hover:text-slate-200'
                 }`}
               >
                 <span
-                  className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg transition-colors ${
+                  className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg transition-colors duration-200 ${
                     isActive ? 'bg-indigo-500/25 text-indigo-200' : 'bg-slate-800/70 text-slate-400 group-hover:text-slate-200'
                   }`}
                 >

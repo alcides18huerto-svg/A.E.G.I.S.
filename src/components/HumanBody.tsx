@@ -89,7 +89,7 @@ export default function HumanBody({ reading, anomalies, alerts }: Props) {
     return active;
   }, [anomalies, alerts]);
 
-  const hologramZones: HologramZoneState[] = BODY_ZONES.map((zone) => {
+  const hologramZones = useMemo<HologramZoneState[]>(() => BODY_ZONES.map((zone) => {
     const severity = activeZones.get(zone.id);
     const area = zone.relatedAreas[0] || 'environmental';
     return {
@@ -97,8 +97,9 @@ export default function HumanBody({ reading, anomalies, alerts }: Props) {
       color: getSeverityColor(severity ?? 'normal', area),
       active: Boolean(severity),
       selected: selectedZone === zone.id,
+      severity: severity ?? 'normal',
     };
-  });
+  }), [activeZones, selectedZone]);
 
   if (!reading) return null;
 
