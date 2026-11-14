@@ -20,6 +20,7 @@ export const SOURCES = {
   BONE_HRP: { ref: 'HRP-F07-ERFT.R2 (2024); Lang 2004; LeBlanc 2000', title: 'Bone loss 1-1.5 %/month hip, ~0.9-1.0 %/month spine without countermeasure' },
   SLEEP_3001: { ref: 'NASA-STD-3001 V1; HRP BHP Evidence Report 2016', title: '8 h sleep opportunity required; observed ISS 6-6.5 h (Barger 2014)' },
   CLINICAL_NONFLIGHT: { ref: 'NASA flight rules / clinical terrestrial standard', title: 'Indicative operational/emergency limits (not diagnostic)' },
+  GLUCOSE_CLINICAL: { ref: 'Clinical terrestrial standard (ADA); HRP nutritional risk context', title: 'Glucose: <70 mg/dL hypoglycemia; >250 mg/dL hyperglycemia, requires attention' },
 } as const;
 
 export type RuleSeverity = 'warning' | 'critical' | 'emergency';
@@ -46,6 +47,8 @@ export const SAFETY_RULES: SafetyRule[] = [
   { id: 'SR-CO2', param: 'co2Level', threshold: 4000, direction: 'above', severity: 'warning', rule: 'CO2 1-h > 4000 ppm (~3 mmHg)', action: 'Ventilación de emergencia. Verificar scrubbers. Riesgo de cefalea (Law 2014).', source: SOURCES.STD3001_V2_6004, dataClass: 'measured' },
   { id: 'SR-CO2-WATCH', param: 'co2Level', threshold: 2500, direction: 'above', severity: 'warning', rule: 'CO2 > 2500 ppm (nominal ISS)', action: 'Iniciar vigilancia de la media 24-h. Síntomas: registrar cefalea.', source: SOURCES.OCHMO_TB_004, dataClass: 'measured' },
   { id: 'SR-RAD', param: 'radiationDose', threshold: 0.0542, direction: 'above', severity: 'warning', rule: 'Tasa de radiación > 1.3 mSv/día (GCR, espacio libre)', action: 'Revisar composición de extravehículos y actividad. ALARA: considerad refugio si se acerca a 250 mSv/evento.', source: SOURCES.STD3001_V1_4033, dataClass: 'measured' },
+  { id: 'SR-GLU-LOW', param: 'bloodGlucose', threshold: 70, direction: 'below', severity: 'critical', rule: 'Glucosa < 70 mg/dL (hipoglucemia)', action: 'Ingesta inmediata de carbohidratos de acción rápida. Vigilar consciencia.', source: SOURCES.GLUCOSE_CLINICAL, dataClass: 'measured' },
+  { id: 'SR-GLU-HIGH', param: 'bloodGlucose', threshold: 250, direction: 'above', severity: 'warning', rule: 'Glucosa > 250 mg/dL (hiperglucemia)', action: 'Hidratación, revisar dieta y actividad. Contactar cirujano de vuelo si persiste.', source: SOURCES.GLUCOSE_CLINICAL, dataClass: 'measured' },
   { id: 'SR-SLEEP-DEBT', param: 'sleepQuality', threshold: 40, direction: 'below', severity: 'warning', rule: 'Sueño crónicamente bajo (≤6 h equivale ~40/100)', action: 'Ajustar carga de trabajo. NASA-STD-3001: 8 h de oportunidad de sueño.', source: SOURCES.SLEEP_3001, dataClass: 'measured' },
 ];
 

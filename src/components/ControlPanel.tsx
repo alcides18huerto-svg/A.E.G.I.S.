@@ -8,6 +8,7 @@ interface Props {
   onToggleOnline: () => void;
   onUpdateConfig: (partial: Partial<EngineConfig>) => void;
   onInjectAnomaly: (crewId: string, type: string) => void;
+  onExport: () => void;
   selectedCrewId: string;
 }
 
@@ -22,6 +23,8 @@ const anomalyTypes = [
   { id: 'co2_high', label: 'CO2 Alto', desc: 'Simula fallo ambiental' },
   { id: 'rad_high', label: 'Radiación', desc: 'Simula evento radiactivo' },
   { id: 'hrv_low', label: 'HRV Baja', desc: 'Simula baja variabilidad' },
+  { id: 'glucose_high', label: 'Glucosa Alta', desc: 'Simula hiperglucemia' },
+  { id: 'mood_low', label: 'Ánimo Bajo', desc: 'Simula alteración conductual' },
 ];
 
 export default function ControlPanel({
@@ -32,12 +35,13 @@ export default function ControlPanel({
   onToggleOnline,
   onUpdateConfig,
   onInjectAnomaly,
+  onExport,
   selectedCrewId,
 }: Props) {
   return (
     <div className="space-y-6">
       {/* Engine controls */}
-      <div className="p-6 rounded-2xl bg-slate-900/50 border border-slate-800">
+      <div className="p-6 rounded-2xl glass-panel">
         <h4 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">Control del Motor</h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <button
@@ -86,7 +90,7 @@ export default function ControlPanel({
       </div>
 
       {/* Configuration */}
-      <div className="p-6 rounded-2xl bg-slate-900/50 border border-slate-800">
+      <div className="p-6 rounded-2xl glass-panel">
         <h4 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">Configuración del Sistema</h4>
         <div className="space-y-4">
           <div>
@@ -121,7 +125,7 @@ export default function ControlPanel({
       </div>
 
       {/* Anomaly injection */}
-      <div className="p-6 rounded-2xl bg-slate-900/50 border border-slate-800">
+      <div className="p-6 rounded-2xl glass-panel">
         <h4 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-2">Inyección de Anomalías</h4>
         <p className="text-xs text-slate-500 mb-4">
           Simula condiciones fisiológicas o ambientales para probar el sistema. 
@@ -144,33 +148,20 @@ export default function ControlPanel({
         </div>
       </div>
 
-      {/* Architecture diagram */}
-      <div className="p-6 rounded-2xl bg-slate-900/50 border border-slate-800">
-        <h4 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">Pipeline de Procesamiento</h4>
-        <div className="flex flex-wrap items-center gap-2">
-          {[
-            { name: '1. Captura', color: 'bg-blue-500/20 border-blue-500/30 text-blue-300', desc: 'Sensores + timestamp' },
-            { name: '2. Calidad', color: 'bg-emerald-500/20 border-emerald-500/30 text-emerald-300', desc: 'Validación + flags' },
-            { name: '3. Referencia', color: 'bg-purple-500/20 border-purple-500/30 text-purple-300', desc: 'Baseline individual' },
-            { name: '4. Anomalías', color: 'bg-amber-500/20 border-amber-500/30 text-amber-300', desc: 'Z-score + tendencias' },
-            { name: '5. Seguridad', color: 'bg-red-500/20 border-red-500/30 text-red-300', desc: 'Reglas independientes' },
-            { name: '6. Interfaz', color: 'bg-cyan-500/20 border-cyan-500/30 text-cyan-300', desc: 'Dashboard + alertas' },
-          ].map((stage, i) => (
-            <div key={stage.name} className="flex items-center gap-2">
-              <div className={`px-3 py-2 rounded-lg border ${stage.color}`}>
-                <div className="text-xs font-medium">{stage.name}</div>
-                <div className="text-xs opacity-60">{stage.desc}</div>
-              </div>
-              {i < 5 && <span className="text-slate-600 text-lg">→</span>}
-            </div>
-          ))}
-        </div>
-        <div className="mt-4 p-3 rounded-lg bg-red-500/5 border border-red-500/20">
-          <p className="text-xs text-red-300">
-            <span className="font-medium">Nota:</span> La etapa 5 (Reglas de Seguridad) opera de forma independiente al motor predictivo (etapa 4). 
-            Si se cumple una condición crítica, se activa la respuesta sin esperar a la IA.
-          </p>
-        </div>
+      {/* Reports */}
+      <div className="p-6 rounded-2xl glass-panel">
+        <h4 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-2">Informes y auditoría</h4>
+        <p className="text-xs text-slate-500 mb-4">
+          Exporta una instantánea JSON con referencias individuales, dosis acumulada, modelo óseo, índices de riesgo, alertas y telemetría del pipeline.
+        </p>
+        <button
+          type="button"
+          onClick={onExport}
+          className="inline-flex items-center gap-2 rounded-xl border border-indigo-500/40 bg-indigo-500/10 px-4 py-2.5 text-sm font-medium text-indigo-200 transition-colors hover:bg-indigo-500/20"
+        >
+          <span aria-hidden="true">⤓</span>
+          Descargar informe de misión
+        </button>
       </div>
     </div>
   );

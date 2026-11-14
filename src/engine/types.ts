@@ -24,6 +24,8 @@ export interface SensorReading {
   activityLevel: number;       // 0-10
   sleepQuality: number;        // 0-100
   stressIndex: number;         // 0-100
+  bloodGlucose: number;        // mg/dL
+  moodIndex: number;           // 0-100 (100 = excelente ánimo)
   co2Level: number;            // ppm
   ambientTemp: number;         // °C
   noiseLevel: number;          // dB
@@ -49,6 +51,8 @@ export interface BaselineProfile {
   temperature: { mean: number; std: number };
   sleepQuality: { mean: number; std: number };
   stressIndex: { mean: number; std: number };
+  glucose: { mean: number; std: number };
+  mood: { mean: number; std: number };
   activityLevel: { mean: number; std: number };
   lastUpdated: number;
 }
@@ -120,6 +124,64 @@ export interface AreaAssessment {
   dataClass: 'measured' | 'estimated' | 'mixed';
 }
 
+export type PipelineStageId =
+  | 'capture'
+  | 'quality'
+  | 'baseline'
+  | 'anomaly'
+  | 'safety'
+  | 'interface';
+
+export interface PipelineStageMetric {
+  id: PipelineStageId;
+  name: string;
+  status: 'ok' | 'degraded' | 'fault' | 'idle';
+  lastDurationMs: number;
+  processed: number;
+}
+
+export interface PipelineTelemetry {
+  ticks: number;
+  tickDurationMs: number;
+  readingsProcessed: number;
+  anomaliesEmitted: number;
+  alertsEmitted: number;
+  lastTickAt: number;
+  stages: PipelineStageMetric[];
+}
+
+
+export interface HazardAssessment {
+  id: string;
+  hazardNumber: number;
+  name: string;
+  hrpRef: string;
+  linkedAreas: Array<'immune' | 'bone' | 'cardiovascular' | 'psychological' | 'environmental'>;
+  status: 'nominal' | 'watch' | 'alert';
+  score: number;
+  indicators: string[];
+  countermeasure: string;
+  dataClass: 'measured' | 'estimated' | 'mixed';
+}
+
+export interface RiskScore {
+  crewId: string;
+  score: number; // 0 (nominal) .. 100 (crítico)
+  level: 'nominal' | 'watch' | 'elevated' | 'critical';
+  drivers: string[];
+}
+
+export interface MissionEvent {
+  id: string;
+  timestamp: number;
+  crewId: string;
+  kind: 'alert' | 'anomaly';
+  severity: string;
+  title: string;
+  detail: string;
+  acknowledged: boolean;
+}
+
 export interface SystemState {
   crew: CrewMember[];
   currentReadings: Map<string, SensorReading>;
@@ -131,6 +193,9 @@ export interface SystemState {
   areaAssessments: Map<string, AreaAssessment[]>;
   radiationProfiles: Map<string, RadiationProfile>;
   boneProfiles: Map<string, BoneProfile>;
+  riskScores: Map<string, RiskScore>;
+  hazardAssessments: Map<string, HazardAssessment[]>;
+  pipeline: PipelineTelemetry;
   isOnline: boolean;
   syncQueue: number;
   systemTime: number;

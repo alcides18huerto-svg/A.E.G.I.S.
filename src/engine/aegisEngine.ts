@@ -6,9 +6,11 @@
 import {
   CrewMember, SensorReading, QualityFlags, BaselineProfile,
   AnomalyResult, SafetyAlert, SystemState, EngineConfig,
-  SurveillanceArea, AreaAssessment, RadiationProfile, BoneProfile
+  SurveillanceArea, AreaAssessment, RadiationProfile, BoneProfile,
+  PipelineTelemetry, PipelineStageId, PipelineStageMetric, RiskScore, MissionEvent, HazardAssessment
 } from './types';
 import { SAFETY_RULES, RADIATION_LIMITS, BONE_MODEL } from './thresholds';
+import { assessHazards } from './hazards';
 import { buildGuidance, MedicalGuidance } from './medicalAssistant';
 
 // ---- INITIAL CREW ----
@@ -26,6 +28,40 @@ const DEFAULT_CONFIG: EngineConfig = {
   anomalyProbability: 0.05,
 };
 
+const PIPELINE_STAGE_NAMES: Record<PipelineStageId, string> = {
+  capture: 'Captura',
+  quality: 'Calidad',
+  baseline: 'Referencia',
+  anomaly: 'Anomalías',
+  safety: 'Seguridad',
+  interface: 'Interfaz',
+};
+
+function createPipelineTelemetry(): PipelineTelemetry {
+  return {
+    ticks: 0,
+    tickDurationMs: 0,
+    readingsProcessed: 0,
+    anomaliesEmitted: 0,
+    alertsEmitted: 0,
+    lastTickAt: 0,
+    stages: (Object.keys(PIPELINE_STAGE_NAMES) as PipelineStageId[]).map((id) => ({
+      id,
+      name: PIPELINE_STAGE_NAMES[id],
+      status: 'idle',
+      lastDurationMs: 0,
+      processed: 0,
+    })),
+  };
+}
+
+function riskLevelOf(score: number): RiskScore['level'] {
+  if (score >= 70) return 'critical';
+  if (score >= 45) return 'elevated';
+  if (score >= 20) return 'watch';
+  return 'nominal';
+}
+
 // ---- SAFETY RULES (Independent from AI) ----
 // Thresholds now imported from thresholds.ts with NASA traceability.
 
@@ -40,6 +76,8 @@ export function generateSensorReading(crewId: string, config: EngineConfig, time
   const baseTemp = [36.6, 36.7, 36.5, 36.8][crewIdx];
   const baseSleep = [78, 82, 72, 75][crewIdx];
   const baseStress = [35, 30, 42, 38][crewIdx];
+  const baseGlucose = [95, 98, 92, 100][crewIdx];
+  const baseMood = [72, 78, 65, 70][crewIdx];
 
   // Circadian rhythm modulation
   const hourOfDay = (time / 3600) % 24;
@@ -58,6 +96,8 @@ export function generateSensorReading(crewId: string, config: EngineConfig, time
   let activity = Math.max(0, Math.min(10, 3 + Math.sin(hourOfDay * Math.PI / 8) * 3 + noise(2)));
   let sleepQ = baseSleep + noise(8);
   let stress = baseStress + noise(10);
+  let glucose = baseGlucose + noise(8);
+  let mood = baseMood + noise(9) - (stress - baseStress) * 0.3;
   let co2 = 400 + noise(50) + (activity > 5 ? 100 : 0);
   let ambTemp = 22 + noise(1);
   let noiseLvl = 35 + noise(5) + (activity > 5 ? 10 : 0);
@@ -74,15 +114,18 @@ export function generateSensorReading(crewId: string, config: EngineConfig, time
   if (anomalyActive.get(crewId + '_co2_high')) co2 += 3000;
   if (anomalyActive.get(crewId + '_rad_high')) radiation += 0.6;
   if (anomalyActive.get(crewId + '_hrv_low')) hrv -= 25;
+  if (anomalyActive.get(crewId + '_glucose_high')) glucose += 170;
+  if (anomalyActive.get(crewId + '_mood_low')) mood -= 40;
 
   // Random fault injection
   if (Math.random() < config.faultInjectionRate) {
-    const faults = ['heartRate', 'temperature', 'spo2', 'activityLevel'];
+    const faults = ['heartRate', 'temperature', 'spo2', 'activityLevel', 'bloodGlucose'];
     const fault = faults[Math.floor(Math.random() * faults.length)];
     if (fault === 'heartRate') hr = -1; // sensor fault
     if (fault === 'temperature') temp = -999;
     if (fault === 'spo2') spo2 = -1;
     if (fault === 'activityLevel') activity = -1;
+    if (fault === 'bloodGlucose') glucose = -1;
   }
 
   return {
@@ -98,6 +141,8 @@ export function generateSensorReading(crewId: string, config: EngineConfig, time
     activityLevel: Math.max(0, Math.min(10, Math.round(activity * 10) / 10)),
     sleepQuality: Math.max(0, Math.min(100, Math.round(sleepQ))),
     stressIndex: Math.max(0, Math.min(100, Math.round(stress))),
+    bloodGlucose: Math.max(0, Math.round(glucose)),
+    moodIndex: Math.max(0, Math.min(100, Math.round(mood))),
     co2Level: Math.max(300, Math.round(co2)),
     ambientTemp: Math.round(ambTemp * 10) / 10,
     noiseLevel: Math.max(20, Math.round(noiseLvl)),
@@ -129,6 +174,10 @@ export function assessQuality(reading: SensorReading): QualityFlags {
   }
   if (reading.activityLevel < 0) {
     faults.push('activityLevel');
+    score -= 20;
+  }
+  if (reading.bloodGlucose < 0 || reading.bloodGlucose > 500) {
+    faults.push('bloodGlucose');
     score -= 20;
   }
 
@@ -181,6 +230,8 @@ export function updateBaseline(baseline: BaselineProfile | null | undefined, rea
       temperature: { mean: reading.temperature, std: 0 },
       sleepQuality: { mean: reading.sleepQuality, std: 0 },
       stressIndex: { mean: reading.stressIndex, std: 0 },
+      glucose: { mean: reading.bloodGlucose, std: 0 },
+      mood: { mean: reading.moodIndex, std: 0 },
       activityLevel: { mean: reading.activityLevel, std: 0 },
       lastUpdated: reading.timestamp,
     };
@@ -202,6 +253,8 @@ export function updateBaseline(baseline: BaselineProfile | null | undefined, rea
   const temp = updateStat(baseline.temperature.mean, baseline.temperature.std, reading.temperature);
   const sleep = updateStat(baseline.sleepQuality.mean, baseline.sleepQuality.std, reading.sleepQuality);
   const stress = updateStat(baseline.stressIndex.mean, baseline.stressIndex.std, reading.stressIndex);
+  const glucose = updateStat(baseline.glucose.mean, baseline.glucose.std, reading.bloodGlucose);
+  const mood = updateStat(baseline.mood.mean, baseline.mood.std, reading.moodIndex);
   const act = updateStat(baseline.activityLevel.mean, baseline.activityLevel.std, reading.activityLevel);
 
   return {
@@ -213,6 +266,8 @@ export function updateBaseline(baseline: BaselineProfile | null | undefined, rea
     temperature: temp,
     sleepQuality: sleep,
     stressIndex: stress,
+    glucose,
+    mood,
     activityLevel: act,
     lastUpdated: reading.timestamp,
   };
@@ -229,6 +284,8 @@ function createEmptyBaseline(crewId: string): BaselineProfile {
     temperature: { mean: 36.6, std: 0.3 },
     sleepQuality: { mean: 75, std: 10 },
     stressIndex: { mean: 35, std: 10 },
+    glucose: { mean: 95, std: 12 },
+    mood: { mean: 72, std: 12 },
     activityLevel: { mean: 4, std: 2 },
     lastUpdated: Date.now(),
   };
@@ -258,6 +315,8 @@ export function detectAnomalies(
     { param: 'temperature', baselineKey: 'temperature', area: 'immune', name: 'Temperatura corporal' },
     { param: 'sleepQuality', baselineKey: 'sleepQuality', area: 'psychological', name: 'Calidad de sueño' },
     { param: 'stressIndex', baselineKey: 'stressIndex', area: 'psychological', name: 'Índice de estrés' },
+    { param: 'bloodGlucose', baselineKey: 'glucose', area: 'cardiovascular', name: 'Glucosa en sangre' },
+    { param: 'moodIndex', baselineKey: 'mood', area: 'psychological', name: 'Estado de ánimo' },
   ];
 
   for (const check of checks) {
@@ -646,6 +705,7 @@ export class AEGISEngine {
   private history: Map<string, SensorReading[]> = new Map();
   private lastTickTime: number = Date.now();
   private tickCount: number = 0;
+  private sustainedStreaks: Map<string, number> = new Map();
 
   constructor() {
     this.config = { ...DEFAULT_CONFIG };
@@ -658,8 +718,11 @@ export class AEGISEngine {
       anomalies: [],
       safetyAlerts: [],
       areaAssessments: new Map(),
+      hazardAssessments: new Map(),
       radiationProfiles: new Map(),
       boneProfiles: new Map(),
+      riskScores: new Map(),
+      pipeline: createPipelineTelemetry(),
       isOnline: true,
       syncQueue: 0,
       systemTime: Date.now(),
@@ -784,20 +847,147 @@ export class AEGISEngine {
     }
   }
 
+  // Stage 4d: sustained / persistence detection (early warning before hard limits)
+  private detectSustained(reading: SensorReading, baseline: BaselineProfile, quality: QualityFlags): AnomalyResult[] {
+    const out: AnomalyResult[] = [];
+    if (quality.qualityScore < 70 || quality.sensorFaults.length > 0) return out;
+
+    const params: {
+      param: keyof SensorReading;
+      key: 'heartRate' | 'hrv' | 'systolicBP' | 'temperature' | 'sleepQuality' | 'stressIndex' | 'glucose' | 'mood';
+      name: string;
+      area: SurveillanceArea;
+    }[] = [
+      { param: 'heartRate', key: 'heartRate', name: 'Frecuencia cardiaca', area: 'cardiovascular' },
+      { param: 'heartRateVariability', key: 'hrv', name: 'HRV', area: 'cardiovascular' },
+      { param: 'systolicBP', key: 'systolicBP', name: 'Presión sistólica', area: 'cardiovascular' },
+      { param: 'temperature', key: 'temperature', name: 'Temperatura corporal', area: 'immune' },
+      { param: 'sleepQuality', key: 'sleepQuality', name: 'Calidad de sueño', area: 'psychological' },
+      { param: 'stressIndex', key: 'stressIndex', name: 'Índice de estrés', area: 'psychological' },
+      { param: 'bloodGlucose', key: 'glucose', name: 'Glucosa en sangre', area: 'cardiovascular' },
+      { param: 'moodIndex', key: 'mood', name: 'Estado de ánimo', area: 'psychological' },
+    ];
+
+    for (const p of params) {
+      const value = reading[p.param] as number;
+      const stat = baseline[p.key] as { mean: number; std: number };
+      const z = (value - stat.mean) / Math.max(stat.std, 0.1);
+      const key = `${reading.crewId}:${p.param}`;
+      const streak = Math.abs(z) > 2 ? (this.sustainedStreaks.get(key) ?? 0) + 1 : 0;
+      this.sustainedStreaks.set(key, streak);
+
+      // Emit on first crossing of 4 consecutive samples, then every 8 to avoid flooding.
+      if (streak === 4 || (streak > 4 && streak % 8 === 0)) {
+        const severity: AnomalyResult['severity'] = Math.abs(z) > 4 ? 'high' : Math.abs(z) > 3 ? 'medium' : 'low';
+        out.push({
+          id: `ANM-${++anomalyCounter}`,
+          timestamp: reading.timestamp,
+          crewId: reading.crewId,
+          type: 'sustained',
+          parameter: `${p.name} sostenida`,
+          severity,
+          description: `${p.name} ${z > 0 ? 'elevada' : 'reducida'} de forma sostenida en ${streak} lecturas (z=${z.toFixed(2)}, ref ${stat.mean.toFixed(1)}±${stat.std.toFixed(1)})`,
+          confidence: Math.min(0.9, Math.abs(z) / 4) * (quality.qualityScore / 100),
+          zScore: z,
+          dataQuality: quality.qualityScore / 100,
+          requiresHumanReview: severity === 'high',
+          area: p.area,
+          dataClass: 'estimated',
+          sourceRef: 'A.E.G.I.S. detector de persistencia (ventana móvil, 4 muestras)',
+        });
+      }
+    }
+    return out;
+  }
+
+  // Composite per-crew risk index (0 = nominal, 100 = critical)
+  private computeRiskScore(
+    member: CrewMember,
+    reading: SensorReading,
+    quality: QualityFlags,
+    alerts: SafetyAlert[],
+    anomalies: AnomalyResult[],
+    areas: AreaAssessment[],
+    radiation: RadiationProfile,
+    bone: BoneProfile
+  ): RiskScore {
+    const now = reading.timestamp;
+    const activeAlerts = alerts.filter(a => a.crewId === member.id && !a.acknowledged && a.timestamp > now - 300000);
+    const recentAnomalies = anomalies.filter(a => a.crewId === member.id && a.timestamp > now - 60000);
+    const drivers: string[] = [];
+    let score = 0;
+
+    for (const alert of activeAlerts) {
+      if (alert.severity === 'emergency') {
+        score += 40;
+        drivers.push(`EMERGENCIA: ${alert.rule}`);
+      } else if (alert.severity === 'critical') {
+        score += 26;
+        drivers.push(`Crítico: ${alert.rule}`);
+      } else {
+        score += 8;
+      }
+    }
+
+    for (const anomaly of recentAnomalies) {
+      if (anomaly.severity === 'critical') score += 20;
+      else if (anomaly.severity === 'high') score += 12;
+      else if (anomaly.severity === 'medium') score += 6;
+      else if (anomaly.severity === 'low') score += 2;
+      if (anomaly.type === 'sustained') score += 4;
+      if (anomaly.requiresHumanReview && drivers.length < 4) drivers.push(anomaly.parameter);
+    }
+
+    const areaAlerts = areas.filter(a => a.status === 'alert');
+    const areaWatches = areas.filter(a => a.status === 'watch');
+    score += areaAlerts.length * 10 + areaWatches.length * 4;
+    if (areaAlerts.length > 0 && drivers.length < 4) drivers.push(`Área en alerta: ${areaAlerts[0].area}`);
+    else if (areaWatches.length > 0 && drivers.length < 4) drivers.push(`Área en vigilancia: ${areaWatches[0].area}`);
+
+    score += Math.max(0, 100 - quality.qualityScore) * 0.2;
+
+    const careerPct = ((radiation.preflightPriorMsv + radiation.cumulativeDoseMsv) / RADIATION_LIMITS.careerLimitMsv) * 100;
+    score += careerPct * 0.15;
+    if (careerPct >= 60 && drivers.length < 4) drivers.push(`Dosis de carrera ${careerPct.toFixed(0)}%`);
+
+    score += Math.min(20, Math.abs(Math.min(0, bone.estimatedBmdChangePercent)) * 2.5);
+
+    const clamped = Math.round(Math.max(0, Math.min(100, score)));
+    return {
+      crewId: member.id,
+      score: clamped,
+      level: riskLevelOf(clamped),
+      drivers: drivers.slice(0, 4),
+    };
+  }
+
   // Main processing tick
   tick() {
+    const tickStart = performance.now();
     const now = Date.now();
     const elapsedHours = Math.max(0, Math.min(24 * 30.44, (now - this.lastTickTime) / 3600000));
     this.lastTickTime = now;
     this.state.systemTime = now;
 
+    let captureMs = 0, qualityMs = 0, baselineMs = 0, anomalyMs = 0, safetyMs = 0, interfaceMs = 0;
+    let anomaliesThisTick = 0, alertsThisTick = 0;
+    let worstQuality = 100;
+    let hasQualityFault = false;
+    let hasCriticalAlert = false;
+
     for (const member of this.state.crew) {
       // Stage 1: Capture
+      const tCapture = performance.now();
       const reading = generateSensorReading(member.id, this.config, this.state.systemTime, this.anomalyFlags);
+      captureMs += performance.now() - tCapture;
 
       // Stage 2: Quality
+      const tQuality = performance.now();
       const quality = assessQuality(reading);
       this.state.qualityFlags.set(member.id, quality);
+      qualityMs += performance.now() - tQuality;
+      worstQuality = Math.min(worstQuality, quality.qualityScore);
+      if (quality.overallQuality === 'invalid') hasQualityFault = true;
 
       // Store reading
       const hist = this.history.get(member.id) || [];
@@ -809,42 +999,64 @@ export class AEGISEngine {
       this.state.readingHistory.set(member.id, [...hist]);
 
       // Stage 3: Baseline
-      const currentBaseline = this.state.baselines.get(member.id);
+      const tBaseline = performance.now();
+      let updated = this.state.baselines.get(member.id);
+      const currentBaseline = updated;
       if (currentBaseline || member.baselineEstablished) {
-        const updated = updateBaseline(currentBaseline, reading, quality);
+        updated = updateBaseline(currentBaseline, reading, quality);
         this.state.baselines.set(member.id, updated);
+      }
+      baselineMs += performance.now() - tBaseline;
 
-        // Stage 4: Anomaly detection
-        if (quality.qualityScore >= 50) {
-          const newAnomalies = detectAnomalies(reading, updated, quality, hist);
-          this.state.anomalies.push(...newAnomalies);
-          if (this.state.anomalies.length > 100) {
-            this.state.anomalies = this.state.anomalies.slice(-120);
-          }
+      // Stage 4: Anomaly detection (statistical + persistence)
+      const tAnomaly = performance.now();
+      if (updated && quality.qualityScore >= 50) {
+        const newAnomalies = detectAnomalies(reading, updated, quality, hist);
+        const sustained = quality.qualityScore >= 70 ? this.detectSustained(reading, updated, quality) : [];
+        const combined = [...newAnomalies, ...sustained];
+        this.state.anomalies.push(...combined);
+        anomaliesThisTick += combined.length;
+        if (this.state.anomalies.length > 100) {
+          this.state.anomalies = this.state.anomalies.slice(-120);
         }
       }
+      anomalyMs += performance.now() - tAnomaly;
 
       // Stage 4b: Radiation dose integration + limits [V1 4030/4031/4033]
       const radProfile = this.state.radiationProfiles.get(member.id) || createRadiationProfile(member.id);
       const { profile: updatedRadiation, radiationAnomalies } = updateRadiationProfile(radProfile, reading, previous, elapsedHours);
       this.state.radiationProfiles.set(member.id, updatedRadiation);
       this.state.anomalies.push(...radiationAnomalies);
+      anomaliesThisTick += radiationAnomalies.length;
 
       // Stage 4c: Bone model (HRP-F07-ERFT.R2)
       const bone = updateBoneProfile(this.state.boneProfiles.get(member.id), reading, quality, elapsedHours);
       this.state.boneProfiles.set(member.id, bone);
 
       // Stage 5: Safety rules (INDEPENDENT - runs regardless of AI)
+      const tSafety = performance.now();
       const safetyAlerts = checkSafetyRules(reading);
       this.state.safetyAlerts.push(...safetyAlerts);
+      alertsThisTick += safetyAlerts.length;
+      if (safetyAlerts.some(a => a.severity === 'critical' || a.severity === 'emergency')) hasCriticalAlert = true;
       if (this.state.safetyAlerts.length > 50) {
         this.state.safetyAlerts = this.state.safetyAlerts.slice(-50);
       }
+      safetyMs += performance.now() - tSafety;
 
-      // Stage 6: Area assessments
+      // Stage 6: Area assessments + composite risk
+      const tInterface = performance.now();
       const bl = this.state.baselines.get(member.id) ?? createEmptyBaseline(member.id);
       const areas = assessAreas(reading, bl, quality, this.state.anomalies, bone, updatedRadiation);
       this.state.areaAssessments.set(member.id, areas);
+      this.state.hazardAssessments.set(
+        member.id,
+        assessHazards(reading, updatedRadiation, bone, areas, this.state.safetyAlerts.filter(a => a.crewId === member.id), this.state.isOnline, this.state.syncQueue)
+      );
+      this.state.riskScores.set(
+        member.id,
+        this.computeRiskScore(member, reading, quality, this.state.safetyAlerts, this.state.anomalies, areas, updatedRadiation, bone)
+      );
 
       // Update crew status
       const crewAlerts = safetyAlerts.filter(a => a.crewId === member.id);
@@ -859,6 +1071,7 @@ export class AEGISEngine {
       } else {
         member.status = 'nominal';
       }
+      interfaceMs += performance.now() - tInterface;
     }
 
     // Sync queue simulation
@@ -867,6 +1080,37 @@ export class AEGISEngine {
     } else {
       this.state.syncQueue += this.state.crew.length;
     }
+
+    // Pipeline telemetry (system blocks observability)
+    const p = this.state.pipeline;
+    const durations: Record<PipelineStageId, number> = {
+      capture: captureMs,
+      quality: qualityMs,
+      baseline: baselineMs,
+      anomaly: anomalyMs,
+      safety: safetyMs,
+      interface: interfaceMs,
+    };
+    const statuses: Record<PipelineStageId, PipelineStageMetric['status']> = {
+      capture: 'ok',
+      quality: hasQualityFault ? 'fault' : worstQuality < 70 ? 'degraded' : 'ok',
+      baseline: 'ok',
+      anomaly: anomaliesThisTick > 0 ? 'degraded' : 'ok',
+      safety: hasCriticalAlert ? 'fault' : alertsThisTick > 0 ? 'degraded' : 'ok',
+      interface: 'ok',
+    };
+    p.ticks += 1;
+    p.lastTickAt = now;
+    p.tickDurationMs = Math.round((performance.now() - tickStart) * 100) / 100;
+    p.readingsProcessed += this.state.crew.length;
+    p.anomaliesEmitted += anomaliesThisTick;
+    p.alertsEmitted += alertsThisTick;
+    p.stages = p.stages.map(stage => ({
+      ...stage,
+      status: statuses[stage.id],
+      lastDurationMs: Math.round(durations[stage.id] * 100) / 100,
+      processed: stage.processed + this.state.crew.length,
+    }));
 
     if (++this.tickCount % 30 === 0) this.persist();
     this.notify();
@@ -919,6 +1163,68 @@ export class AEGISEngine {
       this.getRadiationProfile(target),
       this.getBoneProfile(target)
     );
+  }
+
+  getRiskScore(crewId: string): RiskScore {
+    return this.state.riskScores.get(crewId) ?? {
+      crewId,
+      score: 0,
+      level: 'nominal',
+      drivers: [],
+    };
+  }
+
+  // Unified chronological feed of safety alerts + AI anomalies
+  getMissionEvents(crewId?: string, limit: number = 40): MissionEvent[] {
+    const events: MissionEvent[] = [];
+    for (const alert of this.state.safetyAlerts) {
+      if (crewId && alert.crewId !== crewId) continue;
+      events.push({
+        id: alert.id,
+        timestamp: alert.timestamp,
+        crewId: alert.crewId,
+        kind: 'alert',
+        severity: alert.severity,
+        title: alert.rule,
+        detail: alert.message,
+        acknowledged: alert.acknowledged,
+      });
+    }
+    for (const anomaly of this.state.anomalies) {
+      if (crewId && anomaly.crewId !== crewId) continue;
+      events.push({
+        id: anomaly.id,
+        timestamp: anomaly.timestamp,
+        crewId: anomaly.crewId,
+        kind: 'anomaly',
+        severity: anomaly.severity,
+        title: anomaly.parameter,
+        detail: anomaly.description,
+        acknowledged: false,
+      });
+    }
+    return events.sort((a, b) => b.timestamp - a.timestamp).slice(0, limit);
+  }
+
+  // Exportable mission snapshot (JSON) for post-flight analysis / audit
+  exportReport(): string {
+    const payload = {
+      system: 'A.E.G.I.S.',
+      generatedAt: new Date().toISOString(),
+      crew: this.state.crew,
+      pipeline: this.state.pipeline,
+      riskScores: Array.from(this.state.riskScores.entries()),
+      baselines: Array.from(this.state.baselines.entries()),
+      hazards: Array.from(this.state.hazardAssessments.entries()),
+      radiation: Array.from(this.state.radiationProfiles.entries()).map(([id, profile]) => ({
+        ...profile,
+        dailyRateMsv: Array.from(profile.dailyRateMsv.entries()),
+      })),
+      bone: Array.from(this.state.boneProfiles.entries()),
+      recentAlerts: this.state.safetyAlerts.slice(-50),
+      recentAnomalies: this.state.anomalies.slice(-50),
+    };
+    return JSON.stringify(payload, null, 2);
   }
 }
 

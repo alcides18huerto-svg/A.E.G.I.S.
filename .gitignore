@@ -60,6 +60,7 @@ dist/
 
 # Models (generated at runtime)
 models/
+!public/models/
 *.pkl
 *.joblib
 
@@ -85,3 +86,4 @@ htmlcov/
 .next/
 *.png
 !assets/**/*.png
+!public/**/*.png

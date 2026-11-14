@@ -9,19 +9,23 @@ const SEVERITY_STYLES: Record<string, string> = {
   info: 'bg-blue-500/20 text-blue-300 border border-blue-500/30',
 };
 
-export default function ActionProtocol() {
+interface Props {
+  crewId?: string;
+}
+
+export default function ActionProtocol({ crewId }: Props) {
   const [guidance, setGuidance] = useState<MedicalGuidance | null>(null);
 
   useEffect(() => {
-    const refresh = () => setGuidance(aegisEngine.getMedicalGuidance());
+    const refresh = () => setGuidance(aegisEngine.getMedicalGuidance(crewId));
     const unsubscribe = aegisEngine.subscribe(refresh);
     refresh();
     return () => { unsubscribe(); };
-  }, []);
+  }, [crewId]);
 
   if (!guidance) {
     return (
-      <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm">
+      <div className="glass-panel rounded-2xl p-6 backdrop-blur-sm">
         <h3 className="text-lg font-semibold text-slate-200 mb-4 flex items-center gap-2">
           <span className="text-2xl">▸</span>
           Asistente Médico Autónomo
@@ -40,7 +44,7 @@ export default function ActionProtocol() {
   const offlineSteps = guidance.steps.filter(s => !s.needsCommunication).length;
 
   return (
-    <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm">
+    <div className="glass-panel rounded-2xl p-6 backdrop-blur-sm">
       <div className="flex items-start justify-between mb-4 gap-3">
         <div>
           <h3 className="text-lg font-semibold text-slate-200 flex items-center gap-2">

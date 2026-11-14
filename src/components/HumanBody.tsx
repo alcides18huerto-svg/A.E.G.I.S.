@@ -18,61 +18,87 @@ interface BodyZone {
 }
 
 const BODY_ZONES: BodyZone[] = [
-  { id: 'brain', name: 'Cerebro', relatedParams: ['stressIndex', 'sleepQuality'], relatedAreas: ['psychological'] },
+  { id: 'brain', name: 'Cerebro', relatedParams: ['stressIndex', 'sleepQuality', 'moodIndex'], relatedAreas: ['psychological'] },
   { id: 'heart', name: 'Corazón', relatedParams: ['heartRate', 'heartRateVariability', 'systolicBP', 'diastolicBP'], relatedAreas: ['cardiovascular'] },
   { id: 'lungs', name: 'Pulmones', relatedParams: ['spo2'], relatedAreas: ['immune'] },
-  { id: 'core', name: 'Núcleo / Temp.', relatedParams: ['temperature', 'skinTemperature'], relatedAreas: ['immune'] },
+  { id: 'core', name: 'Núcleo / Temp.', relatedParams: ['temperature', 'skinTemperature', 'bloodGlucose'], relatedAreas: ['immune'] },
   { id: 'bones', name: 'Sistema Óseo', relatedParams: [], relatedAreas: ['bone'] },
   { id: 'env', name: 'Entorno', relatedParams: ['co2Level', 'ambientTemp', 'noiseLevel', 'radiationDose'], relatedAreas: ['environmental'] },
 ];
 
 const SEVERITY_ORDER: Record<string, number> = { info: 0, low: 1, medium: 2, high: 3, critical: 4 };
 
-function getSeverityColor(severity: string): string {
-  switch (severity) {
-    case 'critical': return '#ef4444';
-    case 'high': return '#f97316';
-    case 'medium': return '#f59e0b';
-    case 'low': return '#eab308';
-    default: return '#22d3ee';
-  }
+function getSeverityColor(severity: string, area: string): string {
+  const severityColors: Record<string, string> = {
+    critical: '#ff0040',
+    high: '#ff6b6b',
+    medium: '#ffa500',
+    low: '#ffd93d',
+    normal: '#00d4ff',
+  };
+  const areaMultipliers: Record<string, number> = {
+    cardiovascular: 1.3,
+    lungs: 1.2,
+    immune: 1.0,
+    psychological: 0.9,
+    environmental: 0.8,
+    bone: 0.8,
+  };
+  const multiplier = areaMultipliers[area] || 1;
+  const color = severityColors[severity] || severityColors['normal'];
+  const hex = parseInt(color.slice(1, 7), 16);
+  const r = (hex >> 16) & 255;
+  const g = (hex >> 8) & 255;
+  const b = hex & 255;
+  const nr = Math.min(255, Math.max(0, Math.round(r * multiplier)));
+  const ng = Math.min(255, Math.max(0, Math.round(g * multiplier)));
+  const nb = Math.min(255, Math.max(0, Math.round(b * multiplier)));
+  return `#${nr.toString(16).padStart(2, '0')}${ng.toString(16).padStart(2, '0')}${nb.toString(16).padStart(2, '0')}`;
 }
 
 export default function HumanBody({ reading, anomalies, alerts }: Props) {
   const [selectedZone, setSelectedZone] = useState<string | null>(null);
 
+  const areaMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    BODY_ZONES.forEach((zone) => {
+      zone.relatedAreas.forEach((area) => {
+        map[zone.id] = area;
+      });
+    });
+    return map;
+  }, [BODY_ZONES]);
+
   const activeZones = useMemo(() => {
     const active = new Map<string, string>();
     anomalies.forEach((anomaly) => {
       if (anomaly.severity === 'info') return;
-      BODY_ZONES.forEach((zone) => {
-        if (!zone.relatedAreas.includes(anomaly.area)) return;
-        const existing = active.get(zone.id);
-        if (!existing || SEVERITY_ORDER[anomaly.severity] > SEVERITY_ORDER[existing]) {
-          active.set(zone.id, anomaly.severity);
-        }
-      });
+      const area = areaMap[anomaly.area] || 'environmental';
+      const existing = active.get(anomaly.area);
+      if (!existing || SEVERITY_ORDER[anomaly.severity] > SEVERITY_ORDER[existing]) {
+        active.set(anomaly.area, anomaly.severity);
+      }
     });
 
     alerts.forEach((alert) => {
       if (alert.acknowledged) return;
-      BODY_ZONES.forEach((zone) => {
-        if (!zone.relatedParams.includes(alert.parameter)) return;
-        const severity = alert.severity === 'emergency' ? 'critical' : alert.severity;
-        const existing = active.get(zone.id);
-        if (!existing || SEVERITY_ORDER[severity] > SEVERITY_ORDER[existing]) {
-          active.set(zone.id, severity);
-        }
-      });
+      const zone = BODY_ZONES.find((z) => z.relatedParams.includes(alert.parameter));
+      const area = zone ? (zone.relatedAreas[0] || 'environmental') : 'environmental';
+      const severity = alert.severity === 'emergency' ? 'critical' : alert.severity;
+      const existing = active.get(area);
+      if (!existing || SEVERITY_ORDER[severity] > SEVERITY_ORDER[existing]) {
+        active.set(area, severity);
+      }
     });
     return active;
-  }, [anomalies, alerts]);
+  }, [anomalies, alerts, areaMap]);
 
   const hologramZones: HologramZoneState[] = BODY_ZONES.map((zone) => {
     const severity = activeZones.get(zone.id);
+    const area = zone.relatedAreas[0] || 'environmental';
     return {
       id: zone.id,
-      color: getSeverityColor(severity ?? 'normal'),
+      color: getSeverityColor(severity ?? 'normal', area),
       active: Boolean(severity),
       selected: selectedZone === zone.id,
     };
@@ -87,7 +113,7 @@ export default function HumanBody({ reading, anomalies, alerts }: Props) {
   const selectedZoneIsActive = selectedZoneData ? activeZones.has(selectedZoneData.id) : false;
 
   return (
-    <section className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/50 p-5 backdrop-blur-sm sm:p-6">
+    <section className="min-w-0 rounded-2xl glass-panel p-5 backdrop-blur-sm sm:p-6">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-100">
@@ -121,7 +147,7 @@ export default function HumanBody({ reading, anomalies, alerts }: Props) {
               <div className="rounded-xl border border-slate-700 bg-slate-800/45 p-4">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <h4 className="flex items-center gap-2 text-lg font-semibold text-slate-100">
-                    <span className={`h-2.5 w-2.5 rounded-full ${selectedZoneIsActive ? 'animate-pulse' : ''}`} style={{ backgroundColor: getSeverityColor(activeZones.get(selectedZoneData.id) ?? 'normal') }} />
+                    <span className={`h-2.5 w-2.5 rounded-full ${selectedZoneIsActive ? 'animate-pulse' : ''}`} style={{ backgroundColor: getSeverityColor(activeZones.get(selectedZoneData.id) ?? 'normal', selectedZoneData.relatedAreas[0] || 'environmental') }} />
                     {selectedZoneData.name}
                   </h4>
                   <button
@@ -162,7 +188,7 @@ export default function HumanBody({ reading, anomalies, alerts }: Props) {
                         <p className="text-xs text-slate-300">{anomaly.description}</p>
                         <div className="mt-2 flex items-center justify-between gap-2">
                           <span className="text-xs text-slate-500">Confianza: {(anomaly.confidence * 100).toFixed(0)}%</span>
-                          <span className="rounded px-1.5 py-0.5 text-xs capitalize" style={{ backgroundColor: `${getSeverityColor(anomaly.severity)}22`, color: getSeverityColor(anomaly.severity) }}>
+                          <span className="rounded px-1.5 py-0.5 text-xs capitalize" style={{ backgroundColor: `${getSeverityColor(anomaly.severity, anomaly.area)}22`, color: getSeverityColor(anomaly.severity, anomaly.area) }}>
                             {anomaly.severity}
                           </span>
                         </div>
@@ -193,7 +219,7 @@ export default function HumanBody({ reading, anomalies, alerts }: Props) {
                     onClick={() => setSelectedZone(zone.id)}
                     className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-900/70 px-2.5 py-2 text-xs text-slate-400 transition hover:border-cyan-800 hover:text-cyan-100"
                   >
-                    <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: getSeverityColor(activeZones.get(zone.id) ?? 'normal') }} />
+                    <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: getSeverityColor(activeZones.get(zone.id) ?? 'normal', zone.relatedAreas[0] || 'environmental') }} />
                     {zone.name}
                   </button>
                 ))}
@@ -217,6 +243,8 @@ function getParamName(param: string): string {
     spo2: 'Saturación de oxígeno',
     stressIndex: 'Índice de estrés',
     sleepQuality: 'Calidad de sueño',
+    bloodGlucose: 'Glucosa en sangre',
+    moodIndex: 'Estado de ánimo',
     co2Level: 'CO2 ambiental',
     ambientTemp: 'Temperatura ambiente',
     noiseLevel: 'Nivel de ruido',
@@ -236,6 +264,8 @@ function getParamUnit(param: string): string {
     spo2: '%',
     stressIndex: '/100',
     sleepQuality: '/100',
+    bloodGlucose: 'mg/dL',
+    moodIndex: '/100',
     co2Level: 'ppm',
     ambientTemp: '°C',
     noiseLevel: 'dB',

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { aegisEngine } from '../engine/aegisEngine';
-import type { SystemState, EngineConfig, AnomalyResult, SafetyAlert, SensorReading } from '../engine/types';
+import type { SystemState, EngineConfig, AnomalyResult, SafetyAlert, SensorReading, MissionEvent } from '../engine/types';
 
 export function useAEGIS() {
   const [state, setState] = useState<SystemState>(aegisEngine.getState());
@@ -61,6 +61,23 @@ export function useAEGIS() {
     return aegisEngine.getRecentAlerts(crewId, limit);
   }, []);
 
+  const getMissionEvents = useCallback((crewId?: string, limit?: number): MissionEvent[] => {
+    return aegisEngine.getMissionEvents(crewId, limit);
+  }, []);
+
+  const exportReport = useCallback(() => {
+    const json = aegisEngine.exportReport();
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `aegis-mission-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, []);
+
   return {
     state,
     config,
@@ -73,5 +90,7 @@ export function useAEGIS() {
     getHistory,
     getAnomalies,
     getAlerts,
+    getMissionEvents,
+    exportReport,
   };
 }

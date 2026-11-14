@@ -58,7 +58,7 @@ export default function QualityPanel({ quality, reading }: Props) {
       {/* Quality checks */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Sensor faults */}
-        <div className="p-4 rounded-xl bg-slate-900/50 border border-slate-800">
+        <div className="p-4 rounded-xl glass-panel">
           <h5 className="text-sm font-medium text-slate-300 mb-3 flex items-center gap-2">
             <span className={`w-2 h-2 rounded-full ${quality.sensorFaults.length > 0 ? 'bg-red-400' : 'bg-emerald-400'}`} />
             Fallos de Sensor
@@ -79,7 +79,7 @@ export default function QualityPanel({ quality, reading }: Props) {
         </div>
 
         {/* Degraded signals */}
-        <div className="p-4 rounded-xl bg-slate-900/50 border border-slate-800">
+        <div className="p-4 rounded-xl glass-panel">
           <h5 className="text-sm font-medium text-slate-300 mb-3 flex items-center gap-2">
             <span className={`w-2 h-2 rounded-full ${quality.degradedSignals.length > 0 ? 'bg-amber-400' : 'bg-emerald-400'}`} />
             Señales Degradadas
@@ -100,7 +100,7 @@ export default function QualityPanel({ quality, reading }: Props) {
         </div>
 
         {/* Missing values */}
-        <div className="p-4 rounded-xl bg-slate-900/50 border border-slate-800">
+        <div className="p-4 rounded-xl glass-panel">
           <h5 className="text-sm font-medium text-slate-300 mb-3 flex items-center gap-2">
             <span className={`w-2 h-2 rounded-full ${quality.missingValues.length > 0 ? 'bg-amber-400' : 'bg-emerald-400'}`} />
             Valores Faltantes
@@ -117,7 +117,7 @@ export default function QualityPanel({ quality, reading }: Props) {
         </div>
 
         {/* Timestamp */}
-        <div className="p-4 rounded-xl bg-slate-900/50 border border-slate-800">
+        <div className="p-4 rounded-xl glass-panel">
           <h5 className="text-sm font-medium text-slate-300 mb-3 flex items-center gap-2">
             <span className={`w-2 h-2 rounded-full ${quality.timestampErrors ? 'bg-red-400' : 'bg-emerald-400'}`} />
             Integridad Temporal
@@ -127,29 +127,6 @@ export default function QualityPanel({ quality, reading }: Props) {
           ) : (
             <p className="text-sm text-emerald-400">Marcas temporales correctas</p>
           )}
-        </div>
-      </div>
-
-      {/* Pipeline status */}
-      <div className="p-4 rounded-xl bg-slate-900/50 border border-slate-800">
-        <h5 className="text-sm font-medium text-slate-300 mb-3">Estado del Pipeline de Datos</h5>
-        <div className="flex items-center gap-2">
-          {['Captura', 'Calidad', 'Baseline', 'Anomalía', 'Seguridad', 'Interfaz'].map((stage, i) => {
-            const isActive = quality.qualityScore > (i * 15);
-            const isFault = i === 1 && quality.qualityScore < 70;
-            return (
-              <div key={stage} className="flex items-center gap-2">
-                <div className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
-                  isFault ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
-                  isActive ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
-                  'bg-slate-800 text-slate-600 border border-slate-700'
-                }`}>
-                  {stage}
-                </div>
-                {i < 5 && <span className="text-slate-600">→</span>}
-              </div>
-            );
-          })}
         </div>
       </div>
 

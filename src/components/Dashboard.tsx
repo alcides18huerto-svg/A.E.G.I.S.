@@ -1,12 +1,15 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Menu } from 'lucide-react';
 import { useAEGIS } from '../hooks/useAEGIS';
-import CrewOverview from './CrewOverview';
+import Sidebar, { SECTIONS, type SectionId } from './Sidebar';
+import Overview from './Overview';
+import HologramDashboard from './HologramDashboard';
 import SensorPanel from './SensorPanel';
 import AlertPanel from './AlertPanel';
 import QualityPanel from './QualityPanel';
 import ControlPanel from './ControlPanel';
-import HumanBody from './HumanBody';
-import ActionProtocol from './ActionProtocol';
+import SystemBlocksMonitor from './SystemBlocksMonitor';
+import MissionTimeline from './MissionTimeline';
 
 export default function Dashboard() {
   const {
@@ -21,190 +24,218 @@ export default function Dashboard() {
     getHistory,
     getAnomalies,
     getAlerts,
+    getMissionEvents,
+    exportReport,
   } = useAEGIS();
 
   const [selectedCrewId, setSelectedCrewId] = useState<string>(state.crew[0]?.id || '');
-  const [activeTab, setActiveTab] = useState<'sensors' | 'alerts' | 'quality' | 'control'>('sensors');
+  const [activeSection, setActiveSection] = useState<SectionId>('overview');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const selectedCrew = state.crew.find(c => c.id === selectedCrewId);
-  const currentReading = state.currentReadings.get(selectedCrewId);
-  const quality = state.qualityFlags.get(selectedCrewId);
-  const baseline = state.baselines.get(selectedCrewId);
-  const areas = state.areaAssessments.get(selectedCrewId) || [];
-  const history = getHistory(selectedCrewId);
-  const anomalies = getAnomalies(selectedCrewId, 15);
-  const alerts = getAlerts(selectedCrewId, 15);
+  useEffect(() => {
+    if (state.crew.length > 0 && !state.crew.some((member) => member.id === selectedCrewId)) {
+      setSelectedCrewId(state.crew[0].id);
+    }
+  }, [state.crew, selectedCrewId]);
+
+  const systemAlerts = state.safetyAlerts.filter((alert) => !alert.acknowledged);
+  const criticalAlerts = systemAlerts.filter(
+    (alert) => alert.severity === 'critical' || alert.severity === 'emergency'
+  );
+
+  const activeMeta = SECTIONS.find((section) => section.id === activeSection) ?? SECTIONS[0];
+
+  const renderSection = () => {
+    switch (activeSection) {
+      case 'overview':
+        return (
+          <Overview
+            crew={state.crew}
+            selectedCrewId={selectedCrewId}
+            onSelectCrew={setSelectedCrewId}
+            riskScores={state.riskScores}
+            qualityFlags={state.qualityFlags}
+            alerts={state.safetyAlerts}
+            anomalies={state.anomalies}
+            radiationProfiles={state.radiationProfiles}
+            pipeline={state.pipeline}
+            isOnline={state.isOnline}
+            syncQueue={state.syncQueue}
+            onNavigate={setActiveSection}
+          />
+        );
+
+      case 'hologram': {
+        const member = state.crew.find((c) => c.id === selectedCrewId);
+        const reading = state.currentReadings.get(selectedCrewId);
+        const risk = state.riskScores.get(selectedCrewId);
+        const anomalies = getAnomalies(selectedCrewId, 15);
+        const alerts = getAlerts(selectedCrewId, 15);
+        return (
+          <HologramDashboard
+            crewId={selectedCrewId}
+            member={member}
+            reading={reading}
+            risk={risk}
+            anomalies={anomalies}
+            alerts={alerts}
+          />
+        );
+      }
+
+      case 'sensors': {
+        const reading = state.currentReadings.get(selectedCrewId);
+        const baseline = state.baselines.get(selectedCrewId);
+        const history = getHistory(selectedCrewId);
+        const areas = state.areaAssessments.get(selectedCrewId) || [];
+        const hazards = state.hazardAssessments?.get(selectedCrewId) || [];
+        return (
+          <SensorPanel
+            reading={reading}
+            baseline={baseline}
+            history={history}
+            areas={areas}
+            hazards={hazards}
+          />
+        );
+      }
+
+      case 'alerts': {
+        const alerts = getAlerts(selectedCrewId, 15);
+        const anomalies = getAnomalies(selectedCrewId, 15);
+        return <AlertPanel alerts={alerts} anomalies={anomalies} onAcknowledge={acknowledgeAlert} />;
+      }
+
+      case 'quality': {
+        const quality = state.qualityFlags.get(selectedCrewId);
+        const reading = state.currentReadings.get(selectedCrewId);
+        return quality ? (
+          <QualityPanel quality={quality} reading={reading} />
+        ) : (
+          <EmptyState message="Sin datos de calidad para el tripulante seleccionado" />
+        );
+      }
+
+      case 'mission': {
+        const missionEvents = getMissionEvents(selectedCrewId, 30);
+        return (
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <SystemBlocksMonitor
+              pipeline={state.pipeline}
+              config={config}
+              isRunning={isRunning}
+              isOnline={state.isOnline}
+            />
+            <MissionTimeline events={missionEvents} crew={state.crew} />
+          </div>
+        );
+      }
+
+      case 'control':
+        return (
+          <ControlPanel
+            config={config}
+            isRunning={isRunning}
+            isOnline={state.isOnline}
+            onToggleEngine={toggleEngine}
+            onToggleOnline={toggleOnline}
+            onUpdateConfig={updateConfig}
+            onInjectAnomaly={injectAnomaly}
+            onExport={exportReport}
+            selectedCrewId={selectedCrewId}
+          />
+        );
+
+      default:
+        return null;
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950">
-      {/* Header */}
-      <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur-xl sticky top-0 z-50">
-        <div className="max-w-[1920px] mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                <span className="text-white font-bold text-lg">AG</span>
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-white">A.E.G.I.S.</h1>
-                <p className="text-xs text-slate-400">Sistema de Monitorización de Salud en Vuelo Espacial</p>
-              </div>
+    <div className="aegis-shell min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950">
+      <Sidebar
+        active={activeSection}
+        onNavigate={setActiveSection}
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        isRunning={isRunning}
+        isOnline={state.isOnline}
+        syncQueue={state.syncQueue}
+        activeAlerts={systemAlerts.length}
+        criticalAlerts={criticalAlerts.length}
+      />
+
+      <div className="flex min-h-screen flex-col lg:pl-72">
+        <header className="sticky top-0 z-30 border-b border-slate-800 bg-slate-950/80 backdrop-blur-xl">
+          <div className="flex items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              className="rounded-lg border border-slate-800 bg-slate-900/70 p-2 text-slate-300 transition-colors hover:bg-slate-800 hover:text-white lg:hidden"
+              aria-label="Abrir menú de secciones"
+            >
+              <Menu size={20} />
+            </button>
+
+            <div className="hidden items-center gap-2 lg:flex">
+              <span className="h-1.5 w-1.5 rounded-full bg-indigo-400" />
+              <span className="text-[11px] font-medium uppercase tracking-widest text-slate-500">
+                Centro de control de misión
+              </span>
             </div>
 
-            <div className="flex items-center gap-6">
-              {/* Status indicators */}
-              <div className="flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${isRunning ? 'bg-emerald-400 animate-pulse' : 'bg-slate-600'}`} />
-                  <span className="text-slate-300">{isRunning ? 'Activo' : 'Pausado'}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${state.isOnline ? 'bg-cyan-400' : 'bg-amber-400'}`} />
-                  <span className="text-slate-300">{state.isOnline ? 'En línea' : 'Offline'}</span>
-                </div>
-                {!state.isOnline && (
-                  <div className="px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/30">
-                    <span className="text-xs text-amber-300">Cola sync: {state.syncQueue}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="max-w-[1920px] mx-auto px-6 py-6">
-        <div className="grid grid-cols-12 gap-6">
-          {/* Left sidebar - Crew overview */}
-          <div className="col-span-12 lg:col-span-3">
-            <CrewOverview
-              crew={state.crew}
-              selectedId={selectedCrewId}
-              onSelect={setSelectedCrewId}
-              qualityFlags={state.qualityFlags}
-            />
-          </div>
-
-          {/* Main content */}
-          <div className="col-span-12 lg:col-span-9 space-y-6">
-            {/* Selected crew info */}
-            {selectedCrew && currentReading && (
-              <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h2 className="text-2xl font-bold text-white mb-1">{selectedCrew.name}</h2>
-                    <p className="text-sm text-slate-400">{selectedCrew.role} · {selectedCrew.id}</p>
-                  </div>
-                  <div className={`px-4 py-2 rounded-full text-sm font-medium ${
-                    selectedCrew.status === 'nominal' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
-                    selectedCrew.status === 'watch' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
-                    selectedCrew.status === 'alert' ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30' :
-                    'bg-red-500/20 text-red-300 border border-red-500/30 animate-pulse'
-                  }`}>
-                    {selectedCrew.status === 'nominal' ? 'Nominal' :
-                     selectedCrew.status === 'watch' ? 'Observación' :
-                     selectedCrew.status === 'alert' ? 'Alerta' : 'Crítico'}
-                  </div>
-                </div>
-
-                {/* Quick stats */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="bg-slate-800/50 rounded-xl p-4">
-                    <div className="text-xs text-slate-500 mb-1">Frecuencia Cardiaca</div>
-                    <div className="text-2xl font-bold text-white">{currentReading.heartRate} <span className="text-sm text-slate-400">bpm</span></div>
-                  </div>
-                  <div className="bg-slate-800/50 rounded-xl p-4">
-                    <div className="text-xs text-slate-500 mb-1">Presión Arterial</div>
-                    <div className="text-2xl font-bold text-white">{currentReading.systolicBP}/{currentReading.diastolicBP} <span className="text-sm text-slate-400">mmHg</span></div>
-                  </div>
-                  <div className="bg-slate-800/50 rounded-xl p-4">
-                    <div className="text-xs text-slate-500 mb-1">Temperatura</div>
-                    <div className="text-2xl font-bold text-white">{currentReading.temperature} <span className="text-sm text-slate-400">°C</span></div>
-                  </div>
-                  <div className="bg-slate-800/50 rounded-xl p-4">
-                    <div className="text-xs text-slate-500 mb-1">SpO2</div>
-                    <div className="text-2xl font-bold text-white">{currentReading.spo2} <span className="text-sm text-slate-400">%</span></div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Human Body and Action Protocol */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <HumanBody
-                reading={currentReading}
-                anomalies={anomalies}
-                alerts={alerts}
-              />
-              <ActionProtocol />
-            </div>
-
-            {/* Tab navigation */}
-            <div className="flex gap-2 border-b border-slate-800">
-              {[
-                { id: 'sensors', label: 'Sensores y Análisis', icon: '📊' },
-                { id: 'alerts', label: 'Alertas', icon: '🚨', count: alerts.length },
-                { id: 'quality', label: 'Calidad de Datos', icon: '✓' },
-                { id: 'control', label: 'Control del Sistema', icon: '⚙️' },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`px-4 py-3 text-sm font-medium transition-colors relative ${
-                    activeTab === tab.id
-                      ? 'text-indigo-300 border-b-2 border-indigo-400'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
+            <div className="ml-auto flex items-center gap-3">
+              <label className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-1.5 text-xs text-slate-400">
+                <span className="hidden sm:inline">Tripulante</span>
+                <select
+                  value={selectedCrewId}
+                  onChange={(event) => setSelectedCrewId(event.target.value)}
+                  className="max-w-[9rem] cursor-pointer bg-transparent text-xs font-medium text-slate-200 outline-none"
+                  aria-label="Seleccionar tripulante"
                 >
-                  <span className="mr-2">{tab.icon}</span>
-                  {tab.label}
-                  {tab.count !== undefined && tab.count > 0 && (
-                    <span className="ml-2 px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 text-xs">
-                      {tab.count}
-                    </span>
-                  )}
-                </button>
-              ))}
+                  {state.crew.map((member) => (
+                    <option key={member.id} value={member.id} className="bg-slate-900 text-slate-200">
+                      {member.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[1600px] space-y-6">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="font-technical text-[10px] uppercase tracking-[0.24em] text-cyan-300/70">
+                  A.E.G.I.S. · {activeMeta.label}
+                </p>
+                <h2 className="mt-1 text-xl font-bold text-white sm:text-2xl">{activeMeta.label}</h2>
+                <p className="text-sm text-slate-500">{activeMeta.desc}</p>
+              </div>
+              <div className="font-technical hidden items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-3 py-1.5 text-[11px] text-slate-400 sm:flex">
+                <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
+                Sesión segura · telemetría en vivo
+              </div>
             </div>
 
-            {/* Tab content */}
-            {activeTab === 'sensors' && (
-              <SensorPanel
-                reading={currentReading}
-                baseline={baseline}
-                history={history}
-                areas={areas}
-                anomalies={anomalies}
-              />
-            )}
-
-            {activeTab === 'alerts' && (
-              <AlertPanel
-                alerts={alerts}
-                anomalies={anomalies}
-                onAcknowledge={acknowledgeAlert}
-              />
-            )}
-
-            {activeTab === 'quality' && quality && (
-              <QualityPanel quality={quality} reading={currentReading} />
-            )}
-
-            {activeTab === 'control' && (
-              <ControlPanel
-                config={config}
-                isRunning={isRunning}
-                isOnline={state.isOnline}
-                onToggleEngine={toggleEngine}
-                onToggleOnline={toggleOnline}
-                onUpdateConfig={updateConfig}
-                onInjectAnomaly={injectAnomaly}
-                selectedCrewId={selectedCrewId}
-              />
-            )}
+            <div key={activeSection} className="aegis-section">
+              {renderSection()}
+            </div>
           </div>
-        </div>
+        </main>
       </div>
+    </div>
+  );
+}
+
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="rounded-2xl glass-panel p-10 text-center">
+      <div className="mb-2 text-3xl text-slate-600" aria-hidden="true">◌</div>
+      <p className="text-sm text-slate-400">{message}</p>
+      <p className="mt-1 text-xs text-slate-600">El motor actualizará la vista en el próximo ciclo de telemetría</p>
     </div>
   );
 }

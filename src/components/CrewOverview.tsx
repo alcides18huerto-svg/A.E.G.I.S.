@@ -1,13 +1,21 @@
-import type { CrewMember, QualityFlags } from '../engine/types';
+import type { CrewMember, QualityFlags, RiskScore } from '../engine/types';
 
 interface Props {
   crew: CrewMember[];
   selectedId: string;
   onSelect: (id: string) => void;
   qualityFlags: Map<string, QualityFlags>;
+  riskScores?: Map<string, RiskScore>;
 }
 
-export default function CrewOverview({ crew, selectedId, onSelect, qualityFlags }: Props) {
+const RISK_STYLE = {
+  nominal: { text: 'text-emerald-300', bar: 'bg-emerald-400' },
+  watch: { text: 'text-amber-300', bar: 'bg-amber-400' },
+  elevated: { text: 'text-orange-300', bar: 'bg-orange-400' },
+  critical: { text: 'text-red-300', bar: 'bg-red-400' },
+};
+
+export default function CrewOverview({ crew, selectedId, onSelect, qualityFlags, riskScores }: Props) {
   const statusColors = {
     nominal: 'bg-emerald-500',
     watch: 'bg-amber-500',
@@ -22,16 +30,37 @@ export default function CrewOverview({ crew, selectedId, onSelect, qualityFlags 
     critical: 'Crítico',
   };
 
+  const counts = crew.reduce(
+    (acc, member) => {
+      acc[member.status] += 1;
+      return acc;
+    },
+    { nominal: 0, watch: 0, alert: 0, critical: 0 } as Record<CrewMember['status'], number>
+  );
+
   return (
-    <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-4 backdrop-blur-sm sticky top-24">
-      <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+    <div className="glass-panel rounded-2xl p-4 backdrop-blur-sm sticky top-24">
+      <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
         <span className="w-2 h-2 rounded-full bg-indigo-400" />
         Tripulación
+        <span className="ml-auto text-[10px] font-normal normal-case tracking-normal text-slate-600">{crew.length} a bordo</span>
       </h3>
+      <div className="mb-4 grid grid-cols-4 gap-1.5">
+        {(['nominal', 'watch', 'alert', 'critical'] as const).map((status) => (
+          <div key={status} className="rounded-lg bg-slate-950/50 py-1.5 text-center">
+            <div className={`text-sm font-bold ${status === 'nominal' ? 'text-emerald-300' : status === 'watch' ? 'text-amber-300' : status === 'alert' ? 'text-orange-300' : 'text-red-300'}`}>
+              {counts[status]}
+            </div>
+            <div className="text-[9px] uppercase tracking-wide text-slate-600">{statusLabels[status].slice(0, 3)}</div>
+          </div>
+        ))}
+      </div>
       <div className="space-y-2">
         {crew.map((member) => {
           const quality = qualityFlags.get(member.id);
+          const risk = riskScores?.get(member.id);
           const isSelected = member.id === selectedId;
+          const riskStyle = RISK_STYLE[risk?.level ?? 'nominal'];
 
           return (
             <button
@@ -68,7 +97,17 @@ export default function CrewOverview({ crew, selectedId, onSelect, qualityFlags 
                 {!member.baselineEstablished && (
                   <span className="text-amber-400">· Estableciendo base</span>
                 )}
+                {risk && (
+                  <span className={`ml-auto font-mono ${riskStyle.text}`} title={risk.drivers.join(' · ') || 'Sin factores de riesgo'}>
+                    riesgo {risk.score}
+                  </span>
+                )}
               </div>
+              {risk && (
+                <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-slate-950/60">
+                  <div className={`h-full rounded-full ${riskStyle.bar} transition-all duration-500`} style={{ width: `${Math.max(3, risk.score)}%` }} />
+                </div>
+              )}
             </button>
           );
         })}
