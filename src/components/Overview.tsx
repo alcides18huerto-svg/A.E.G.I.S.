@@ -142,8 +142,9 @@ function RadiationExposure({
       <div className="space-y-3">
         {crew.map((member) => {
           const profile = radiationProfiles.get(member.id);
-          const total = profile ? profile.preflightPriorMsv + profile.cumulativeDoseMsv : 0;
-          const pct = Math.min(100, (total / limit) * 100);
+          const rawTotal = Number(profile?.preflightPriorMsv ?? 0) + Number(profile?.cumulativeDoseMsv ?? 0);
+          const total = Number.isFinite(rawTotal) ? rawTotal : 0;
+          const pct = limit > 0 ? Math.min(100, Math.max(0, (total / limit) * 100)) : 0;
           const tone = pct >= 80 ? 'bg-red-400' : pct >= 60 ? 'bg-orange-400' : 'bg-indigo-400';
 
           return (

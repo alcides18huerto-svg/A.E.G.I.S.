@@ -694,6 +694,90 @@ function assessAreas(
 }
 
 // ============================================================
+// PERSISTENCE VALIDATION
+// ============================================================
+
+const PERSIST_KEY = 'aegis_profiles_v1';
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function finiteNumber(value: unknown, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
+function restoreBaseline(id: string, value: unknown): BaselineProfile | null {
+  if (!isRecord(value)) return null;
+  const fallback = createEmptyBaseline(id);
+  const group = (raw: unknown, base: { mean: number; std: number }) => {
+    const item = isRecord(raw) ? raw : {};
+    return { mean: finiteNumber(item.mean, base.mean), std: finiteNumber(item.std, base.std) };
+  };
+  const hr = isRecord(value.heartRate) ? value.heartRate : {};
+
+  return {
+    crewId: id,
+    establishedAt: finiteNumber(value.establishedAt, fallback.establishedAt),
+    samples: finiteNumber(value.samples, fallback.samples),
+    heartRate: {
+      mean: finiteNumber(hr.mean, fallback.heartRate.mean),
+      std: finiteNumber(hr.std, fallback.heartRate.std),
+      min: finiteNumber(hr.min, fallback.heartRate.min),
+      max: finiteNumber(hr.max, fallback.heartRate.max),
+    },
+    hrv: group(value.hrv, fallback.hrv),
+    systolicBP: group(value.systolicBP, fallback.systolicBP),
+    temperature: group(value.temperature, fallback.temperature),
+    sleepQuality: group(value.sleepQuality, fallback.sleepQuality),
+    stressIndex: group(value.stressIndex, fallback.stressIndex),
+    glucose: group(value.glucose, fallback.glucose),
+    mood: group(value.mood, fallback.mood),
+    activityLevel: group(value.activityLevel, fallback.activityLevel),
+    lastUpdated: finiteNumber(value.lastUpdated, fallback.lastUpdated),
+  };
+}
+
+function restoreRadiationProfile(id: string, value: unknown): RadiationProfile | null {
+  if (!isRecord(value)) return null;
+  const dailyRateMsv = new Map<number, number>();
+  if (Array.isArray(value.dailyRateMsv)) {
+    for (const entry of value.dailyRateMsv) {
+      if (!Array.isArray(entry) || entry.length < 2) continue;
+      const [day, rate] = entry;
+      if (typeof day === 'number' && Number.isFinite(day) && typeof rate === 'number' && Number.isFinite(rate)) {
+        dailyRateMsv.set(day, rate);
+      }
+    }
+  }
+  const speEventActiveSince = value.speEventActiveSince;
+
+  return {
+    crewId: id,
+    cumulativeDoseMsv: finiteNumber(value.cumulativeDoseMsv, 0),
+    lastDayBoundary: finiteNumber(value.lastDayBoundary, 0),
+    preflightPriorMsv: finiteNumber(value.preflightPriorMsv, 0),
+    dailyRateMsv,
+    speEventActiveSince: typeof speEventActiveSince === 'number' && Number.isFinite(speEventActiveSince)
+      ? speEventActiveSince
+      : null,
+    speEventAccumMsv: finiteNumber(value.speEventAccumMsv, 0),
+    maxDailyRateMsv: finiteNumber(value.maxDailyRateMsv, 0),
+  };
+}
+
+function restoreBoneProfile(id: string, value: unknown): BoneProfile | null {
+  if (!isRecord(value)) return null;
+  return {
+    crewId: id,
+    estimatedBmdChangePercent: finiteNumber(value.estimatedBmdChangePercent, 0),
+    exerciseAdherentSamples: finiteNumber(value.exerciseAdherentSamples, 0),
+    totalSamplesConsidered: finiteNumber(value.totalSamplesConsidered, 0),
+    lastUpdated: finiteNumber(value.lastUpdated, Date.now()),
+  };
+}
+
+// ============================================================
 // MAIN ENGINE CLASS
 // ============================================================
 export class AEGISEngine {
@@ -743,8 +827,8 @@ export class AEGISEngine {
 
   private persist() {
     try {
-      const KEY = 'aegis_profiles_v1';
       const payload = {
+        version: 2,
         savedAt: Date.now(),
         baselines: Array.from(this.state.baselines.entries()),
         radiation: Array.from(this.state.radiationProfiles.entries()).map(([id, p]) => [
@@ -753,7 +837,7 @@ export class AEGISEngine {
         ]),
         bone: Array.from(this.state.boneProfiles.entries()),
       };
-      window.localStorage.setItem(KEY, JSON.stringify(payload));
+      window.localStorage.setItem(PERSIST_KEY, JSON.stringify(payload));
     } catch {
       // storage unavailable (private mode / SSR): persistence disabled
     }
@@ -761,29 +845,53 @@ export class AEGISEngine {
 
   private restorePersisted() {
     try {
-      const raw = window.localStorage.getItem('aegis_profiles_v1');
+      const raw = window.localStorage.getItem(PERSIST_KEY);
       if (!raw) return;
-      const parsed = JSON.parse(raw);
-      for (const [id, bl] of parsed.baselines ?? []) {
-        if (this.state.baselines.has(id)) this.state.baselines.set(id, bl);
-      }
-      for (const [id, pr] of parsed.radiation ?? []) {
-        if (this.state.radiationProfiles.has(id)) {
-          const restored = { ...pr, dailyRateMsv: new Map(pr.dailyRateMsv) };
-          this.state.radiationProfiles.set(id, restored);
+      const parsed: unknown = JSON.parse(raw);
+      if (!isRecord(parsed)) throw new Error('invalid persisted payload');
+
+      if (Array.isArray(parsed.baselines)) {
+        for (const entry of parsed.baselines) {
+          if (!Array.isArray(entry) || typeof entry[0] !== 'string') continue;
+          const [id, value] = entry;
+          if (!this.state.baselines.has(id)) continue;
+          const restored = restoreBaseline(id, value);
+          if (restored) this.state.baselines.set(id, restored);
         }
       }
-      for (const [id, bone] of parsed.bone ?? []) {
-        if (this.state.boneProfiles.has(id)) this.state.boneProfiles.set(id, bone);
+
+      if (Array.isArray(parsed.radiation)) {
+        for (const entry of parsed.radiation) {
+          if (!Array.isArray(entry) || typeof entry[0] !== 'string') continue;
+          const [id, value] = entry;
+          if (!this.state.radiationProfiles.has(id)) continue;
+          const restored = restoreRadiationProfile(id, value);
+          if (restored) this.state.radiationProfiles.set(id, restored);
+        }
+      }
+
+      if (Array.isArray(parsed.bone)) {
+        for (const entry of parsed.bone) {
+          if (!Array.isArray(entry) || typeof entry[0] !== 'string') continue;
+          const [id, value] = entry;
+          if (!this.state.boneProfiles.has(id)) continue;
+          const restored = restoreBoneProfile(id, value);
+          if (restored) this.state.boneProfiles.set(id, restored);
+        }
       }
     } catch {
-      // corrupted cache: ignore and rebuild
+      // corrupted cache: purge it so the next reload starts clean
+      try {
+        window.localStorage.removeItem(PERSIST_KEY);
+      } catch {
+        // storage unavailable
+      }
     }
   }
 
   resetPersistedProfiles() {
     try {
-      window.localStorage.removeItem('aegis_profiles_v1');
+      window.localStorage.removeItem(PERSIST_KEY);
     } catch {
       // storage unavailable
     }

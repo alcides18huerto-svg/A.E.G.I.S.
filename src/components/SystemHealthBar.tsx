@@ -67,8 +67,9 @@ export default function SystemHealthBar({
   const careerPct = crew.reduce((max, member) => {
     const profile = radiationProfiles.get(member.id);
     if (!profile) return max;
-    const pct = ((profile.preflightPriorMsv + profile.cumulativeDoseMsv) / RADIATION_LIMITS.careerLimitMsv) * 100;
-    return Math.max(max, pct);
+    const total = Number(profile.preflightPriorMsv ?? 0) + Number(profile.cumulativeDoseMsv ?? 0);
+    const pct = (total / RADIATION_LIMITS.careerLimitMsv) * 100;
+    return Number.isFinite(pct) ? Math.max(max, pct) : max;
   }, 0);
 
   const overallStatus = criticalAlerts.length > 0
