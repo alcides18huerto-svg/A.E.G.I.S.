@@ -1,0 +1,22 @@
+body.aegis-wallpaper {
+  min-height: 100vh;
+  background-color: #020617;
+  background-image: none;
+  isolation: isolate;
+}
+
+.aegis-wallpaper::before {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  content: "";
+  background:
+    linear-gradient(135deg, rgba(2, 6, 23, 0.68), rgba(2, 6, 23, 0.42)),
+    url("./earth-milky-way.png") right center / cover no-repeat;
+}
+
+.aegis-wallpaper #aegis-boot,
+.aegis-wallpaper .aegis-shell {
+  background: transparent;
+}

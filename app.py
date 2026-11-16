@@ -13,7 +13,7 @@ from sklearn.preprocessing import StandardScaler
 import joblib
 import pickle
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='public', static_url_path='/static')
 CORS(app)
 
 # ============================================================================
