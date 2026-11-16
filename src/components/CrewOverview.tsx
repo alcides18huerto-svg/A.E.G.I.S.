@@ -1,4 +1,5 @@
 import type { CrewMember, QualityFlags, RiskScore } from '../engine/types';
+import { useI18n } from '../i18n/LanguageContext';
 
 interface Props {
   crew: CrewMember[];
@@ -16,6 +17,7 @@ const RISK_STYLE = {
 };
 
 export default function CrewOverview({ crew, selectedId, onSelect, qualityFlags, riskScores }: Props) {
+  const { t } = useI18n();
   const statusColors = {
     nominal: 'bg-emerald-500',
     watch: 'bg-amber-500',
@@ -41,9 +43,9 @@ export default function CrewOverview({ crew, selectedId, onSelect, qualityFlags,
   return (
     <div className="glass-panel rounded-2xl p-4 backdrop-blur-sm sticky top-24">
       <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-        <span className="w-2 h-2 rounded-full bg-indigo-400" />
-        Tripulación
-        <span className="ml-auto text-[10px] font-normal normal-case tracking-normal text-slate-600">{crew.length} a bordo</span>
+        <span className="w-2 h-2 rounded-full bg-sky-400" />
+        {t('Tripulación')}
+        <span className="ml-auto text-[10px] font-normal normal-case tracking-normal text-slate-600">{t('{n} a bordo', { n: crew.length })}</span>
       </h3>
       <div className="mb-4 grid grid-cols-4 gap-1.5">
         {(['nominal', 'watch', 'alert', 'critical'] as const).map((status) => (
@@ -51,7 +53,7 @@ export default function CrewOverview({ crew, selectedId, onSelect, qualityFlags,
             <div className={`text-sm font-bold ${status === 'nominal' ? 'text-emerald-300' : status === 'watch' ? 'text-amber-300' : status === 'alert' ? 'text-orange-300' : 'text-red-300'}`}>
               {counts[status]}
             </div>
-            <div className="text-[9px] uppercase tracking-wide text-slate-600">{statusLabels[status].slice(0, 3)}</div>
+            <div className="text-[9px] uppercase tracking-wide text-slate-600">{t(statusLabels[status]).slice(0, 3)}</div>
           </div>
         ))}
       </div>
@@ -68,7 +70,7 @@ export default function CrewOverview({ crew, selectedId, onSelect, qualityFlags,
               onClick={() => onSelect(member.id)}
               className={`w-full text-left p-3 rounded-xl transition-all ${
                 isSelected
-                  ? 'bg-indigo-500/20 border border-indigo-500/40'
+                  ? 'bg-sky-500/20 border border-sky-500/40'
                   : 'bg-slate-800/30 border border-transparent hover:bg-slate-800/60'
               }`}
             >
@@ -76,7 +78,7 @@ export default function CrewOverview({ crew, selectedId, onSelect, qualityFlags,
                 <div className={`w-3 h-3 rounded-full ${statusColors[member.status]}`} />
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium text-white truncate">{member.name}</div>
-                  <div className="text-xs text-slate-500">{member.role}</div>
+                  <div className="text-xs text-slate-500">{t(member.role)}</div>
                 </div>
                 {quality && (
                   <div className={`text-xs px-2 py-0.5 rounded-full ${
@@ -90,16 +92,16 @@ export default function CrewOverview({ crew, selectedId, onSelect, qualityFlags,
                 )}
               </div>
               <div className="mt-2 flex items-center gap-2 text-xs text-slate-500">
-                <span>{statusLabels[member.status]}</span>
+                <span>{t(statusLabels[member.status])}</span>
                 {member.baselineEstablished && (
-                  <span className="text-indigo-400">· Base: {member.baselineDays}d</span>
+                  <span className="text-sky-400">· {t('Base: {n}d', { n: member.baselineDays })}</span>
                 )}
                 {!member.baselineEstablished && (
-                  <span className="text-amber-400">· Estableciendo base</span>
+                  <span className="text-amber-400">· {t('Estableciendo base')}</span>
                 )}
                 {risk && (
-                  <span className={`ml-auto font-mono ${riskStyle.text}`} title={risk.drivers.join(' · ') || 'Sin factores de riesgo'}>
-                    riesgo {risk.score}
+                  <span className={`ml-auto font-mono ${riskStyle.text}`} title={risk.drivers.map((d) => t(d)).join(' · ') || t('Sin factores de riesgo')}>
+                    {t('riesgo {n}', { n: risk.score })}
                   </span>
                 )}
               </div>
@@ -115,23 +117,23 @@ export default function CrewOverview({ crew, selectedId, onSelect, qualityFlags,
 
       {/* Legend */}
       <div className="mt-4 pt-4 border-t border-slate-800">
-        <div className="text-xs text-slate-500 mb-2">Estados:</div>
+        <div className="text-xs text-slate-500 mb-2">{t('Estados:')}</div>
         <div className="grid grid-cols-2 gap-1 text-xs">
           <div className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span className="text-slate-400">Nominal</span>
+            <span className="text-slate-400">{t('Nominal')}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-amber-500" />
-            <span className="text-slate-400">Observación</span>
+            <span className="text-slate-400">{t('Observación')}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-orange-500" />
-            <span className="text-slate-400">Alerta</span>
+            <span className="text-slate-400">{t('Alerta')}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-red-500" />
-            <span className="text-slate-400">Crítico</span>
+            <span className="text-slate-400">{t('Crítico')}</span>
           </div>
         </div>
       </div>

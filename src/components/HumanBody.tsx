@@ -2,6 +2,7 @@ import { lazy, Suspense, useMemo, useState } from 'react';
 import type { AnomalyResult, SafetyAlert, SensorReading } from '../engine/types';
 import type { HologramZoneState } from './HologramScene';
 import ErrorBoundary from './ErrorBoundary';
+import { useI18n } from '../i18n/LanguageContext';
 
 const HologramScene = lazy(() => import('./HologramScene'));
 
@@ -28,6 +29,17 @@ const BODY_ZONES: BodyZone[] = [
 ];
 
 const SEVERITY_ORDER: Record<string, number> = { info: 0, low: 1, medium: 2, high: 3, critical: 4 };
+
+const SEVERITY_LABEL_ES: Record<string, string> = {
+  emergency: 'Emergencia',
+  critical: 'Crítico',
+  high: 'Alto',
+  warning: 'Aviso',
+  medium: 'Medio',
+  low: 'Bajo',
+  info: 'Info',
+  normal: 'Normal',
+};
 
 function getSeverityColor(severity: string, area: string): string {
   const severityColors: Record<string, string> = {
@@ -58,6 +70,7 @@ function getSeverityColor(severity: string, area: string): string {
 }
 
 export default function HumanBody({ reading, anomalies, alerts }: Props) {
+  const { t } = useI18n();
   const [selectedZone, setSelectedZone] = useState<string | null>(null);
 
   const activeZones = useMemo(() => {
@@ -115,28 +128,28 @@ export default function HumanBody({ reading, anomalies, alerts }: Props) {
         <div>
           <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-100">
             <span className="text-cyan-300" aria-hidden="true">◈</span>
-            Holograma biomédico 3D
+            {t('Holograma biomédico 3D')}
           </h3>
-          <p className="mt-1 text-xs text-slate-500">Modelo interactivo · telemetría y alertas en tiempo real</p>
+          <p className="mt-1 text-xs text-slate-500">{t('Modelo interactivo · telemetría y alertas en tiempo real')}</p>
         </div>
         <div className="flex items-center gap-2 rounded-full border border-cyan-900/70 bg-cyan-950/40 px-3 py-1.5 text-xs text-cyan-200">
           <span className={`h-1.5 w-1.5 rounded-full ${activeZones.size ? 'bg-amber-400' : 'bg-emerald-400'}`} />
-          {activeZones.size ? `${activeZones.size} zona${activeZones.size === 1 ? '' : 's'} en observación` : 'Sistemas nominales'}
+          {activeZones.size ? t('{n} zona(s) en observación', { n: activeZones.size }) : t('Sistemas nominales')}
         </div>
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(240px,0.9fr)]">
         <div className="min-w-0">
-          <ErrorBoundary title="No se pudo cargar el holograma 3D">
-            <Suspense fallback={<div className="hologram-stage flex items-center justify-center text-sm text-cyan-200">Inicializando holograma 3D…</div>}>
+          <ErrorBoundary title={t('No se pudo cargar el holograma 3D')}>
+            <Suspense fallback={<div className="hologram-stage flex items-center justify-center text-sm text-cyan-200">{t('Inicializando holograma 3D…')}</div>}>
               <HologramScene zones={hologramZones} onSelectZone={setSelectedZone} />
             </Suspense>
           </ErrorBoundary>
           <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px] text-slate-500">
-            <span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-cyan-300" /> Normal</span>
-            <span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-amber-400" /> Medio</span>
-            <span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-orange-500" /> Alto</span>
-            <span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-red-500" /> Crítico</span>
+            <span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-cyan-300" /> {t('Normal')}</span>
+            <span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-amber-400" /> {t('Medio')}</span>
+            <span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-orange-500" /> {t('Alto')}</span>
+            <span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-red-500" /> {t('Crítico')}</span>
           </div>
         </div>
 
@@ -147,15 +160,15 @@ export default function HumanBody({ reading, anomalies, alerts }: Props) {
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <h4 className="flex items-center gap-2 text-lg font-semibold text-slate-100">
                     <span className={`h-2.5 w-2.5 rounded-full ${selectedZoneIsActive ? 'animate-pulse' : ''}`} style={{ backgroundColor: getSeverityColor(activeZones.get(selectedZoneData.id) ?? 'normal', selectedZoneData.relatedAreas[0] || 'environmental') }} />
-                    {selectedZoneData.name}
+                    {t(selectedZoneData.name)}
                   </h4>
                   <button
                     type="button"
                     onClick={() => setSelectedZone(null)}
                     className="rounded-md px-2 py-1 text-xs text-slate-500 hover:bg-slate-700 hover:text-white"
-                    aria-label="Cerrar detalle de zona"
+                    aria-label={t('Cerrar detalle de zona')}
                   >
-                    Cerrar
+                    {t('Cerrar')}
                   </button>
                 </div>
                 <div className="space-y-2">
@@ -164,7 +177,7 @@ export default function HumanBody({ reading, anomalies, alerts }: Props) {
                     if (value === undefined) return null;
                     return (
                       <div key={param} className="flex items-center justify-between gap-3 rounded-lg bg-slate-950/60 p-2.5">
-                        <span className="text-sm text-slate-400">{getParamName(param)}</span>
+                        <span className="text-sm text-slate-400">{t(getParamName(param))}</span>
                         <span className="whitespace-nowrap font-mono text-sm font-medium text-slate-100">
                           {typeof value === 'number' ? value.toFixed(1) : value}
                           <span className="ml-1 text-xs text-slate-500">{getParamUnit(param)}</span>
@@ -173,22 +186,22 @@ export default function HumanBody({ reading, anomalies, alerts }: Props) {
                     );
                   })}
                   {selectedZoneData.relatedParams.length === 0 && (
-                    <p className="text-sm italic text-slate-500">Sin sensores directos en esta fase</p>
+                    <p className="text-sm italic text-slate-500">{t('Sin sensores directos en esta fase')}</p>
                   )}
                 </div>
               </div>
 
               {relatedAnomalies.length > 0 && (
                 <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4">
-                  <h5 className="mb-2 text-sm font-medium text-red-300">Anomalías detectadas</h5>
+                  <h5 className="mb-2 text-sm font-medium text-red-300">{t('Anomalías detectadas')}</h5>
                   <div className="space-y-2">
                     {relatedAnomalies.slice(0, 3).map((anomaly) => (
                       <div key={anomaly.id} className="rounded-lg border border-slate-700 bg-slate-950/60 p-2.5">
-                        <p className="text-xs text-slate-300">{anomaly.description}</p>
+                        <p className="text-xs text-slate-300">{t(anomaly.description)}</p>
                         <div className="mt-2 flex items-center justify-between gap-2">
-                          <span className="text-xs text-slate-500">Confianza: {(anomaly.confidence * 100).toFixed(0)}%</span>
+                          <span className="text-xs text-slate-500">{t('Confianza: {n}%', { n: (anomaly.confidence * 100).toFixed(0) })}</span>
                           <span className="rounded px-1.5 py-0.5 text-xs capitalize" style={{ backgroundColor: `${getSeverityColor(anomaly.severity, anomaly.area)}22`, color: getSeverityColor(anomaly.severity, anomaly.area) }}>
-                            {anomaly.severity}
+                            {t(SEVERITY_LABEL_ES[anomaly.severity] ?? anomaly.severity)}
                           </span>
                         </div>
                       </div>
@@ -199,16 +212,16 @@ export default function HumanBody({ reading, anomalies, alerts }: Props) {
 
               <div className={`rounded-xl border p-3 ${selectedZoneIsActive ? 'border-amber-500/20 bg-amber-500/5' : 'border-emerald-500/20 bg-emerald-500/5'}`}>
                 <p className={`text-sm ${selectedZoneIsActive ? 'text-amber-200' : 'text-emerald-300'}`}>
-                  {selectedZoneIsActive ? 'Anomalía activa — revisar protocolo de acción' : 'Zona dentro de parámetros normales'}
+                  {selectedZoneIsActive ? t('Anomalía activa — revisar protocolo de acción') : t('Zona dentro de parámetros normales')}
                 </p>
               </div>
             </div>
           ) : (
             <div className="flex h-full min-h-[300px] flex-col items-center justify-center rounded-xl border border-slate-800/80 bg-slate-950/25 p-6 text-center">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-cyan-900/70 bg-cyan-950/40 text-2xl text-cyan-200" aria-hidden="true">⌖</div>
-              <p className="mb-1 text-sm font-medium text-slate-200">Explora el holograma</p>
+              <p className="mb-1 text-sm font-medium text-slate-200">{t('Explora el holograma')}</p>
               <p className="max-w-xs text-xs leading-relaxed text-slate-500">
-                Arrastra para girar, usa la rueda para acercar y selecciona una zona iluminada para consultar sus sensores.
+                {t('Arrastra para girar, usa la rueda para acercar y selecciona una zona iluminada para consultar sus sensores.')}
               </p>
               <div className="mt-5 grid w-full max-w-xs grid-cols-2 gap-2 text-left">
                 {BODY_ZONES.map((zone) => (
@@ -219,7 +232,7 @@ export default function HumanBody({ reading, anomalies, alerts }: Props) {
                     className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-900/70 px-2.5 py-2 text-xs text-slate-400 transition hover:border-cyan-800 hover:text-cyan-100"
                   >
                     <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: getSeverityColor(activeZones.get(zone.id) ?? 'normal', zone.relatedAreas[0] || 'environmental') }} />
-                    {zone.name}
+                    {t(zone.name)}
                   </button>
                 ))}
               </div>

@@ -12,6 +12,8 @@ import {
   WifiOff,
   X,
 } from 'lucide-react';
+import { useI18n } from '../i18n/LanguageContext';
+import LanguageToggle from '../i18n/LanguageToggle';
 
 export type SectionId =
   | 'overview'
@@ -62,6 +64,8 @@ export default function Sidebar({
   activeAlerts,
   criticalAlerts,
 }: Props) {
+  const { t } = useI18n();
+
   return (
     <>
       {open && (
@@ -78,26 +82,24 @@ export default function Sidebar({
         }`}
       >
         <div className="flex items-center gap-3 border-b border-slate-800 px-5 py-5">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-500 text-sm font-bold text-white shadow-lg shadow-indigo-500/30">
-            AG
-          </div>
+          <img src="/aegis-logo-escudo-dorado-sin-subtitulo.png" alt="" width={56} height={56} className="shrink-0 object-contain" />
           <div className="min-w-0 flex-1">
             <h1 className="text-lg font-bold leading-tight text-white">A.E.G.I.S.</h1>
-            <p className="truncate text-[11px] text-slate-500">Monitorización en vuelo espacial</p>
+            <p className="truncate text-[11px] text-slate-500">{t('Monitorización en vuelo espacial')}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
             className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-800 hover:text-white lg:hidden"
-            aria-label="Cerrar menú"
+            aria-label={t('Cerrar menú')}
           >
             <X size={18} />
           </button>
         </div>
 
-        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4" aria-label="Secciones del sistema">
+        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4" aria-label={t('Secciones del sistema')}>
           <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-widest text-slate-600">
-            Navegación
+            {t('Navegación')}
           </p>
           {SECTIONS.map((section) => {
             const Icon = section.icon;
@@ -114,20 +116,20 @@ export default function Sidebar({
                 aria-current={isActive ? 'page' : undefined}
                 className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-colors duration-200 ${
                   isActive
-                    ? 'bg-indigo-500/15 font-medium text-indigo-200 shadow-lg shadow-indigo-500/20 ring-1 ring-inset ring-indigo-500/30'
+                    ? 'bg-sky-500/15 font-medium text-sky-200 shadow-lg shadow-sky-500/20 ring-1 ring-inset ring-sky-500/30'
                     : 'text-slate-400 hover:bg-slate-800/70 hover:text-slate-200'
                 }`}
               >
                 <span
                   className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg transition-colors duration-200 ${
-                    isActive ? 'bg-indigo-500/25 text-indigo-200' : 'bg-slate-800/70 text-slate-400 group-hover:text-slate-200'
+                    isActive ? 'bg-sky-500/25 text-sky-200' : 'bg-slate-800/70 text-slate-400 group-hover:text-slate-200'
                   }`}
                 >
                   <Icon size={16} />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate font-medium">{section.label}</span>
-                  <span className="block truncate text-[10px] text-slate-500">{section.desc}</span>
+                  <span className="block truncate font-medium">{t(section.label)}</span>
+                  <span className="block truncate text-[10px] text-slate-500">{t(section.desc)}</span>
                 </span>
                 {badge !== null && (
                   <span
@@ -147,39 +149,42 @@ export default function Sidebar({
           <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
             <div className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
               <Cpu size={13} />
-              Estado del sistema
+              {t('Estado del sistema')}
             </div>
             <div className="space-y-2 text-xs">
               <div className="flex items-center justify-between gap-2">
                 <span className="flex items-center gap-2 text-slate-400">
                   <span className={`h-2 w-2 rounded-full ${isRunning ? 'animate-pulse bg-emerald-400' : 'bg-slate-600'}`} />
-                  Motor
+                  {t('Motor')}
                 </span>
                 <span className={isRunning ? 'text-emerald-300' : 'text-slate-500'}>
-                  {isRunning ? 'Activo' : 'Pausado'}
+                  {isRunning ? t('Activo') : t('Pausado')}
                 </span>
               </div>
               <div className="flex items-center justify-between gap-2">
                 <span className="flex items-center gap-2 text-slate-400">
                   {isOnline ? <Wifi size={13} className="text-cyan-300" /> : <WifiOff size={13} className="text-amber-300" />}
-                  Enlace
+                  {t('Enlace')}
                 </span>
                 <span className={isOnline ? 'text-cyan-300' : 'text-amber-300'}>
-                  {isOnline ? 'En línea' : `Offline · cola ${syncQueue}`}
+                  {isOnline ? t('En línea') : t('Offline · cola {n}', { n: syncQueue })}
                 </span>
               </div>
               <div className="flex items-center justify-between gap-2">
                 <span className="flex items-center gap-2 text-slate-400">
                   <Bell size={13} />
-                  Alertas
+                  {t('Alertas')}
                 </span>
                 <span className={activeAlerts > 0 ? 'text-amber-300' : 'text-emerald-300'}>
-                  {activeAlerts} activas
+                  {t('{n} activas', { n: activeAlerts })}
                 </span>
               </div>
             </div>
           </div>
-          <p className="mt-3 text-center text-[10px] text-slate-600">A.E.G.I.S. · v1.0</p>
+          <div className="mt-3 flex items-center justify-between gap-2">
+            <LanguageToggle />
+            <p className="text-center text-[10px] text-slate-600">A.E.G.I.S. · v1.0</p>
+          </div>
         </div>
       </aside>
     </>

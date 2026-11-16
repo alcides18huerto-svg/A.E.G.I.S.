@@ -486,7 +486,10 @@ export default function AnatomyScene({
       hover.hidden = index < 0;
       renderer.domElement.style.cursor = index < 0 ? "grab" : "pointer";
       if (index >= 0) {
-        hover.textContent = partLabel(atlas.parts[index].name);
+        hover.textContent = partLabel(
+          atlas.parts[index].name,
+          document.documentElement.lang === "en" ? "en" : "es",
+        );
         hover.style.left = `${Math.max(8, Math.min(x + 14, el.clientWidth - 260))}px`;
         hover.style.top = `${Math.max(8, Math.min(y + 18, el.clientHeight - 55))}px`;
       }

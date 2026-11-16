@@ -1,4 +1,5 @@
 import type { QualityFlags, SensorReading } from '../engine/types';
+import { useI18n } from '../i18n/LanguageContext';
 
 interface Props {
   quality: QualityFlags;
@@ -6,6 +7,7 @@ interface Props {
 }
 
 export default function QualityPanel({ quality, reading }: Props) {
+  const { t } = useI18n();
   if (!reading) return null;
 
   const qualityColor = {
@@ -27,7 +29,7 @@ export default function QualityPanel({ quality, reading }: Props) {
       {/* Quality score */}
       <div className={`p-6 rounded-2xl border ${qualityBg[quality.overallQuality]}`}>
         <div className="flex items-center justify-between mb-4">
-          <h4 className="text-lg font-semibold text-slate-200">Control de Calidad de Datos</h4>
+          <h4 className="text-lg font-semibold text-slate-200">{t('Control de Calidad de Datos')}</h4>
           <div className={`text-3xl font-bold ${qualityColor[quality.overallQuality]}`}>
             {quality.qualityScore}%
           </div>
@@ -47,9 +49,9 @@ export default function QualityPanel({ quality, reading }: Props) {
         <div className="flex justify-between mt-2 text-xs text-slate-500">
           <span>0</span>
           <span className={`font-medium ${qualityColor[quality.overallQuality]}`}>
-            {quality.overallQuality === 'excellent' ? 'Excelente' :
-             quality.overallQuality === 'good' ? 'Buena' :
-             quality.overallQuality === 'degraded' ? 'Degradada' : 'Inválida'}
+            {quality.overallQuality === 'excellent' ? t('Excelente') :
+             quality.overallQuality === 'good' ? t('Buena') :
+             quality.overallQuality === 'degraded' ? t('Degradada') : t('Inválida')}
           </span>
           <span>100</span>
         </div>
@@ -61,17 +63,17 @@ export default function QualityPanel({ quality, reading }: Props) {
         <div className="p-4 rounded-xl glass-panel">
           <h5 className="text-sm font-medium text-slate-300 mb-3 flex items-center gap-2">
             <span className={`w-2 h-2 rounded-full ${quality.sensorFaults.length > 0 ? 'bg-red-400' : 'bg-emerald-400'}`} />
-            Fallos de Sensor
+            {t('Fallos de Sensor')}
           </h5>
           {quality.sensorFaults.length === 0 ? (
-            <p className="text-sm text-emerald-400">Todos los sensores operativos</p>
+            <p className="text-sm text-emerald-400">{t('Todos los sensores operativos')}</p>
           ) : (
             <div className="space-y-1">
               {quality.sensorFaults.map((fault) => (
                 <div key={fault} className="flex items-center gap-2 text-sm text-red-300">
                   <span>✗</span>
-                  <span>{getSensorName(fault)}</span>
-                  <span className="text-xs text-red-400/60">— Datos no utilizados</span>
+                  <span>{t(getSensorName(fault))}</span>
+                  <span className="text-xs text-red-400/60">— {t('Datos no utilizados')}</span>
                 </div>
               ))}
             </div>
@@ -82,17 +84,17 @@ export default function QualityPanel({ quality, reading }: Props) {
         <div className="p-4 rounded-xl glass-panel">
           <h5 className="text-sm font-medium text-slate-300 mb-3 flex items-center gap-2">
             <span className={`w-2 h-2 rounded-full ${quality.degradedSignals.length > 0 ? 'bg-amber-400' : 'bg-emerald-400'}`} />
-            Señales Degradadas
+            {t('Señales Degradadas')}
           </h5>
           {quality.degradedSignals.length === 0 ? (
-            <p className="text-sm text-emerald-400">Sin degradación detectada</p>
+            <p className="text-sm text-emerald-400">{t('Sin degradación detectada')}</p>
           ) : (
             <div className="space-y-1">
               {quality.degradedSignals.map((signal) => (
                 <div key={signal} className="flex items-center gap-2 text-sm text-amber-300">
                   <span>⚠</span>
-                  <span>{getSensorName(signal)}</span>
-                  <span className="text-xs text-amber-400/60">— Usar con precaución</span>
+                  <span>{t(getSensorName(signal))}</span>
+                  <span className="text-xs text-amber-400/60">— {t('Usar con precaución')}</span>
                 </div>
               ))}
             </div>
@@ -103,14 +105,14 @@ export default function QualityPanel({ quality, reading }: Props) {
         <div className="p-4 rounded-xl glass-panel">
           <h5 className="text-sm font-medium text-slate-300 mb-3 flex items-center gap-2">
             <span className={`w-2 h-2 rounded-full ${quality.missingValues.length > 0 ? 'bg-amber-400' : 'bg-emerald-400'}`} />
-            Valores Faltantes
+            {t('Valores Faltantes')}
           </h5>
           {quality.missingValues.length === 0 ? (
-            <p className="text-sm text-emerald-400">Sin valores faltantes</p>
+            <p className="text-sm text-emerald-400">{t('Sin valores faltantes')}</p>
           ) : (
             <div className="space-y-1">
               {quality.missingValues.map((val) => (
-                <div key={val} className="text-sm text-amber-300">• {getSensorName(val)}</div>
+                <div key={val} className="text-sm text-amber-300">• {t(getSensorName(val))}</div>
               ))}
             </div>
           )}
@@ -120,25 +122,25 @@ export default function QualityPanel({ quality, reading }: Props) {
         <div className="p-4 rounded-xl glass-panel">
           <h5 className="text-sm font-medium text-slate-300 mb-3 flex items-center gap-2">
             <span className={`w-2 h-2 rounded-full ${quality.timestampErrors ? 'bg-red-400' : 'bg-emerald-400'}`} />
-            Integridad Temporal
+            {t('Integridad Temporal')}
           </h5>
           {quality.timestampErrors ? (
-            <p className="text-sm text-red-300">Error en marca temporal detectado</p>
+            <p className="text-sm text-red-300">{t('Error en marca temporal detectado')}</p>
           ) : (
-            <p className="text-sm text-emerald-400">Marcas temporales correctas</p>
+            <p className="text-sm text-emerald-400">{t('Marcas temporales correctas')}</p>
           )}
         </div>
       </div>
 
       {/* Impact explanation */}
       <div className="p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/20">
-        <h5 className="text-sm font-medium text-cyan-300 mb-2">Impacto en el análisis</h5>
+        <h5 className="text-sm font-medium text-cyan-300 mb-2">{t('Impacto en el análisis')}</h5>
         <p className="text-xs text-slate-400 leading-relaxed">
           {quality.qualityScore >= 70
-            ? 'Los datos son suficientes para el análisis de anomalías y la actualización de la referencia individual.'
+            ? t('Los datos son suficientes para el análisis de anomalías y la actualización de la referencia individual.')
             : quality.qualityScore >= 40
-            ? 'Datos degradados. El análisis de anomalías se realiza con menor confianza. La referencia individual no se actualiza con estos datos.'
-            : 'Datos inválidos. No se realizan análisis. Las reglas de seguridad independientes siguen operando con los sensores disponibles.'}
+            ? t('Datos degradados. El análisis de anomalías se realiza con menor confianza. La referencia individual no se actualiza con estos datos.')
+            : t('Datos inválidos. No se realizan análisis. Las reglas de seguridad independientes siguen operando con los sensores disponibles.')}
         </p>
       </div>
     </div>

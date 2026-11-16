@@ -9,6 +9,7 @@ import type {
   SafetyAlert,
 } from '../engine/types';
 import { RADIATION_LIMITS } from '../engine/thresholds';
+import { useI18n } from '../i18n/LanguageContext';
 
 interface Props {
   crew: CrewMember[];
@@ -27,7 +28,7 @@ interface Kpi {
   value: string;
   hint: string;
   progress: number;
-  accent: 'emerald' | 'cyan' | 'amber' | 'orange' | 'red' | 'indigo';
+  accent: 'emerald' | 'cyan' | 'amber' | 'orange' | 'red' | 'sky';
   icon: typeof ShieldCheck;
 }
 
@@ -37,7 +38,7 @@ const ACCENTS: Record<Kpi['accent'], { text: string; bar: string; ring: string }
   amber: { text: 'text-amber-300', bar: 'bg-amber-400', ring: 'border-amber-500/30 bg-amber-500/5' },
   orange: { text: 'text-orange-300', bar: 'bg-orange-400', ring: 'border-orange-500/30 bg-orange-500/5' },
   red: { text: 'text-red-300', bar: 'bg-red-400', ring: 'border-red-500/30 bg-red-500/5' },
-  indigo: { text: 'text-indigo-300', bar: 'bg-indigo-400', ring: 'border-indigo-500/30 bg-indigo-500/5' },
+  sky: { text: 'text-sky-300', bar: 'bg-sky-400', ring: 'border-sky-500/30 bg-sky-500/5' },
 };
 
 export default function SystemHealthBar({
@@ -51,6 +52,7 @@ export default function SystemHealthBar({
   isOnline,
   syncQueue,
 }: Props) {
+  const { t } = useI18n();
   const risks = crew.map((member) => riskScores.get(member.id)?.score ?? 0);
   const avgRisk = risks.length ? risks.reduce((a, b) => a + b, 0) / risks.length : 0;
   const readiness = Math.round(100 - avgRisk);
@@ -80,49 +82,49 @@ export default function SystemHealthBar({
 
   const kpis: Kpi[] = [
     {
-      label: 'Aptitud de tripulación',
+      label: t('Aptitud de tripulación'),
       value: `${readiness}%`,
-      hint: overallStatus === 'critical' ? 'Condición crítica a bordo' : overallStatus === 'watch' ? 'Vigilancia operacional' : 'Todos los sistemas nominales',
+      hint: overallStatus === 'critical' ? t('Condición crítica a bordo') : overallStatus === 'watch' ? t('Vigilancia operacional') : t('Todos los sistemas nominales'),
       progress: readiness,
       accent: readiness >= 80 ? 'emerald' : readiness >= 55 ? 'amber' : 'red',
       icon: ShieldCheck,
     },
     {
-      label: 'Alertas activas',
+      label: t('Alertas activas'),
       value: `${activeAlerts.length}`,
-      hint: criticalAlerts.length ? `${criticalAlerts.length} crítica(s) sin reconocer` : 'Sin alertas críticas pendientes',
+      hint: criticalAlerts.length ? t('{n} crítica(s) sin reconocer', { n: criticalAlerts.length }) : t('Sin alertas críticas pendientes'),
       progress: Math.min(100, activeAlerts.length * 20),
       accent: criticalAlerts.length ? 'red' : activeAlerts.length ? 'amber' : 'emerald',
       icon: Bell,
     },
     {
-      label: 'Anomalías (60 s)',
+      label: t('Anomalías (60 s)'),
       value: `${recentAnomalies.length}`,
-      hint: recentAnomalies.some((a) => a.type === 'sustained') ? 'Patrón sostenido detectado' : 'Ventana móvil del motor IA',
+      hint: recentAnomalies.some((a) => a.type === 'sustained') ? t('Patrón sostenido detectado') : t('Ventana móvil del motor IA'),
       progress: Math.min(100, recentAnomalies.length * 12),
       accent: recentAnomalies.length ? 'orange' : 'emerald',
       icon: Activity,
     },
     {
-      label: 'Integridad de datos',
+      label: t('Integridad de datos'),
       value: `${avgQuality.toFixed(0)}%`,
-      hint: avgQuality >= 90 ? 'Sensores estables' : avgQuality >= 70 ? 'Señal aceptable' : 'Datos degradados',
+      hint: avgQuality >= 90 ? t('Sensores estables') : avgQuality >= 70 ? t('Señal aceptable') : t('Datos degradados'),
       progress: avgQuality,
       accent: avgQuality >= 90 ? 'cyan' : avgQuality >= 70 ? 'amber' : 'red',
       icon: Database,
     },
     {
-      label: 'Dosis de carrera',
+      label: t('Dosis de carrera'),
       value: `${careerPct.toFixed(1)}%`,
-      hint: `Límite ${RADIATION_LIMITS.careerLimitMsv} mSv · ALARA`,
+      hint: t('Límite {n} mSv · ALARA', { n: RADIATION_LIMITS.careerLimitMsv }),
       progress: Math.min(100, careerPct),
-      accent: careerPct >= 80 ? 'red' : careerPct >= 60 ? 'orange' : 'indigo',
+      accent: careerPct >= 80 ? 'red' : careerPct >= 60 ? 'orange' : 'sky',
       icon: Radiation,
     },
     {
-      label: 'Enlace y telemetría',
-      value: isOnline ? 'En línea' : 'Offline',
-      hint: `Tick ${pipeline.tickDurationMs.toFixed(1)} ms · Cola ${syncQueue}`,
+      label: t('Enlace y telemetría'),
+      value: isOnline ? t('En línea') : t('Offline'),
+      hint: t('Tick {tick} ms · Cola {queue}', { tick: pipeline.tickDurationMs.toFixed(1), queue: syncQueue }),
       progress: isOnline ? 100 : Math.min(100, syncQueue * 4),
       accent: isOnline ? 'cyan' : 'amber',
       icon: Wifi,

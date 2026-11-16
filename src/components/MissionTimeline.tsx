@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { CrewMember, MissionEvent } from '../engine/types';
+import { useI18n } from '../i18n/LanguageContext';
 
 interface Props {
   events: MissionEvent[];
@@ -28,6 +29,16 @@ const SEVERITY_TEXT: Record<string, string> = {
   info: 'text-cyan-300',
 };
 
+const SEVERITY_LABEL_ES: Record<string, string> = {
+  emergency: 'Emergencia',
+  critical: 'Crítico',
+  high: 'Alto',
+  warning: 'Aviso',
+  medium: 'Medio',
+  low: 'Bajo',
+  info: 'Info',
+};
+
 function relativeTime(timestamp: number): string {
   const seconds = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
   if (seconds < 60) return `${seconds}s`;
@@ -39,6 +50,7 @@ function relativeTime(timestamp: number): string {
 }
 
 export default function MissionTimeline({ events, crew }: Props) {
+  const { t } = useI18n();
   const [filter, setFilter] = useState<Filter>('all');
 
   const crewName = useMemo(() => {
@@ -60,10 +72,10 @@ export default function MissionTimeline({ events, crew }: Props) {
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h4 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-slate-300">
-            <span className="text-indigo-300" aria-hidden="true">◷</span>
-            Línea de tiempo de misión
+            <span className="text-sky-300" aria-hidden="true">◷</span>
+            {t('Línea de tiempo de misión')}
           </h4>
-          <p className="mt-1 text-xs text-slate-500">Alertas y anomalías fusionadas en orden cronológico</p>
+          <p className="mt-1 text-xs text-slate-500">{t('Alertas y anomalías fusionadas en orden cronológico')}</p>
         </div>
         <div className="flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-950/50 p-1">
           {filters.map((item) => (
@@ -72,10 +84,10 @@ export default function MissionTimeline({ events, crew }: Props) {
               type="button"
               onClick={() => setFilter(item.id)}
               className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors ${
-                filter === item.id ? 'bg-indigo-500/25 text-indigo-200' : 'text-slate-500 hover:text-slate-300'
+                filter === item.id ? 'bg-sky-500/25 text-sky-200' : 'text-slate-500 hover:text-slate-300'
               }`}
             >
-              {item.label}
+              {t(item.label)}
               <span className="ml-1 text-slate-500">{item.count}</span>
             </button>
           ))}
@@ -85,8 +97,8 @@ export default function MissionTimeline({ events, crew }: Props) {
       {filtered.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center rounded-xl border border-slate-800 bg-slate-950/30 p-8 text-center">
           <div className="mb-2 text-2xl" aria-hidden="true">✓</div>
-          <p className="text-sm text-slate-400">Sin eventos en esta vista</p>
-          <p className="mt-1 text-xs text-slate-600">La telemetría aparece aquí a medida que el motor procesa lecturas</p>
+          <p className="text-sm text-slate-400">{t('Sin eventos en esta vista')}</p>
+          <p className="mt-1 text-xs text-slate-600">{t('La telemetría aparece aquí a medida que el motor procesa lecturas')}</p>
         </div>
       ) : (
         <div className="relative max-h-[420px] space-y-3 overflow-y-auto pr-1">
@@ -100,17 +112,17 @@ export default function MissionTimeline({ events, crew }: Props) {
                 <span className={`relative z-10 mt-1.5 h-3.5 w-3.5 flex-shrink-0 rounded-full shadow ${dot} ${event.severity === 'critical' || event.severity === 'emergency' ? 'animate-pulse' : ''}`} />
                 <div className="min-w-0 flex-1 rounded-xl border border-slate-800 bg-slate-950/40 p-3">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className={`text-[10px] font-bold uppercase tracking-wider ${text}`}>{event.severity}</span>
+                    <span className={`text-[10px] font-bold uppercase tracking-wider ${text}`}>{t(SEVERITY_LABEL_ES[event.severity] ?? event.severity)}</span>
                     <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400">
-                      {event.kind === 'alert' ? 'Seguridad' : 'IA'}
+                      {event.kind === 'alert' ? t('Seguridad') : t('IA')}
                     </span>
                     <span className="truncate text-xs text-slate-400">{member?.name ?? event.crewId}</span>
                     <span className="ml-auto font-mono text-[10px] text-slate-600">-{relativeTime(event.timestamp)}</span>
                   </div>
-                  <p className="mt-1 truncate text-sm font-medium text-slate-200" title={event.title}>{event.title}</p>
-                  <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-slate-500" title={event.detail}>{event.detail}</p>
+                  <p className="mt-1 truncate text-sm font-medium text-slate-200" title={event.title}>{t(event.title)}</p>
+                  <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-slate-500" title={event.detail}>{t(event.detail)}</p>
                   {event.kind === 'alert' && event.acknowledged && (
-                    <span className="mt-1 inline-block text-[10px] text-emerald-400">✓ reconocida</span>
+                    <span className="mt-1 inline-block text-[10px] text-emerald-400">✓ {t('reconocida')}</span>
                   )}
                 </div>
               </div>

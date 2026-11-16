@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { AlertTriangle, BarChart3, CheckCircle2, Eye, Siren, Zap } from 'lucide-react';
 import type { SafetyAlert, AnomalyResult } from '../engine/types';
+import { useI18n } from '../i18n/LanguageContext';
 
 interface Props {
   alerts: SafetyAlert[];
@@ -10,7 +11,16 @@ interface Props {
 
 type AlertFilter = 'all' | 'active' | 'acknowledged';
 
+const AREA_LABEL_ES: Record<string, string> = {
+  cardiovascular: 'Cardiovascular',
+  immune: 'Inmunitario',
+  psychological: 'Psicológico',
+  environmental: 'Ambiental',
+  bone: 'Óseo',
+};
+
 export default function AlertPanel({ alerts, anomalies, onAcknowledge }: Props) {
+  const { t } = useI18n();
   const [filter, setFilter] = useState<AlertFilter>('active');
   const [severityFilter, setSeverityFilter] = useState<'all' | 'critical' | 'warning'>('all');
 
@@ -57,10 +67,10 @@ export default function AlertPanel({ alerts, anomalies, onAcknowledge }: Props) 
       <div>
         <div className="flex flex-wrap items-center gap-3 mb-3">
           <h4 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
-            Reglas de Seguridad Independientes
+            {t('Reglas de Seguridad Independientes')}
           </h4>
           <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/30">
-            No dependen de IA
+            {t('No dependen de IA')}
           </span>
           {activeCount > 0 && (
             <button
@@ -68,7 +78,7 @@ export default function AlertPanel({ alerts, anomalies, onAcknowledge }: Props) 
               onClick={() => alerts.filter(a => !a.acknowledged).forEach(a => onAcknowledge(a.id))}
               className="ml-auto rounded-lg border border-slate-700 bg-slate-800/70 px-3 py-1 text-xs text-slate-300 transition-colors hover:bg-slate-700"
             >
-              Reconocer todas ({activeCount})
+              {t('Reconocer todas ({n})', { n: activeCount })}
             </button>
           )}
         </div>
@@ -85,10 +95,10 @@ export default function AlertPanel({ alerts, anomalies, onAcknowledge }: Props) 
                 type="button"
                 onClick={() => setFilter(item.id)}
                 className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors ${
-                  filter === item.id ? 'bg-indigo-500/25 text-indigo-200' : 'text-slate-500 hover:text-slate-300'
+                  filter === item.id ? 'bg-sky-500/25 text-sky-200' : 'text-slate-500 hover:text-slate-300'
                 }`}
               >
-                {item.label} <span className="text-slate-500">{item.count}</span>
+                {t(item.label)} <span className="text-slate-500">{item.count}</span>
               </button>
             ))}
           </div>
@@ -115,8 +125,8 @@ export default function AlertPanel({ alerts, anomalies, onAcknowledge }: Props) 
         {filteredAlerts.length === 0 ? (
           <div className="p-6 rounded-xl glass-panel text-center">
             <CheckCircle2 size={28} className="mx-auto mb-2 text-emerald-400" />
-            <p className="text-slate-400">Sin alertas que coincidan con el filtro</p>
-            <p className="text-xs text-slate-600 mt-1">Las reglas clínicas operan de forma independiente al motor predictivo</p>
+            <p className="text-slate-400">{t('Sin alertas que coincidan con el filtro')}</p>
+            <p className="text-xs text-slate-600 mt-1">{t('Las reglas clínicas operan de forma independiente al motor predictivo')}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -130,16 +140,16 @@ export default function AlertPanel({ alerts, anomalies, onAcknowledge }: Props) 
                         alert.severity === 'emergency' ? 'text-red-400' :
                         alert.severity === 'critical' ? 'text-red-300' : 'text-amber-300'
                       }`}>
-                        {alert.severity === 'emergency' ? 'Emergencia' : alert.severity === 'critical' ? 'Crítico' : 'Aviso'}
+                        {alert.severity === 'emergency' ? t('Emergencia') : alert.severity === 'critical' ? t('Crítico') : t('Aviso')}
                       </span>
                       <span className="text-xs text-slate-600">{alert.id}</span>
-                      {alert.acknowledged && <span className="text-xs text-emerald-400">✓ Reconocida</span>}
+                      {alert.acknowledged && <span className="text-xs text-emerald-400">✓ {t('Reconocida')}</span>}
                     </div>
-                    <p className="text-sm text-slate-200 font-medium">{alert.rule}</p>
-                    <p className="text-sm text-slate-400 mt-1">{alert.message}</p>
+                    <p className="text-sm text-slate-200 font-medium">{t(alert.rule)}</p>
+                    <p className="text-sm text-slate-400 mt-1">{t(alert.message)}</p>
                     <div className="mt-2 p-2 rounded-lg bg-slate-900/50 border border-slate-700">
                       <p className="text-xs text-cyan-300">
-                        <span className="font-medium">Acción requerida:</span> {alert.action}
+                        <span className="font-medium">{t('Acción requerida:')}</span> {t(alert.action)}
                       </p>
                     </div>
                   </div>
@@ -148,7 +158,7 @@ export default function AlertPanel({ alerts, anomalies, onAcknowledge }: Props) 
                       onClick={() => onAcknowledge(alert.id)}
                       className="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-xs text-slate-200 transition-colors"
                     >
-                      Reconocer
+                      {t('Reconocer')}
                     </button>
                   )}
                 </div>
@@ -162,18 +172,18 @@ export default function AlertPanel({ alerts, anomalies, onAcknowledge }: Props) 
       <div>
         <div className="flex items-center gap-3 mb-4">
           <h4 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
-            Anomalías del Motor Predictivo
+            {t('Anomalías del Motor Predictivo')}
           </h4>
           <span className="text-xs px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
-            Requiere revisión humana
+            {t('Requiere revisión humana')}
           </span>
         </div>
 
         {anomalies.length === 0 ? (
           <div className="p-6 rounded-xl glass-panel text-center">
             <BarChart3 size={28} className="mx-auto mb-2 text-cyan-400" />
-            <p className="text-slate-400">Sin anomalías detectadas</p>
-            <p className="text-xs text-slate-600 mt-1">El motor de IA compara con la referencia individual</p>
+            <p className="text-slate-400">{t('Sin anomalías detectadas')}</p>
+            <p className="text-xs text-slate-600 mt-1">{t('El motor de IA compara con la referencia individual')}</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -193,25 +203,25 @@ export default function AlertPanel({ alerts, anomalies, onAcknowledge }: Props) 
                         anomaly.type === 'sustained' ? 'bg-orange-500/20 text-orange-300' :
                         'bg-cyan-500/20 text-cyan-300'
                       }`}>
-                        {anomaly.type === 'deviation' ? 'Desviación' : anomaly.type === 'trend' ? 'Tendencia' : anomaly.type === 'sustained' ? 'Persistente' : 'Contextual'}
+                        {anomaly.type === 'deviation' ? t('Desviación') : anomaly.type === 'trend' ? t('Tendencia') : anomaly.type === 'sustained' ? t('Persistente') : t('Contextual')}
                       </span>
-                      <span className="text-xs text-slate-500">{anomaly.area}</span>
+                      <span className="text-xs text-slate-500">{t(AREA_LABEL_ES[anomaly.area] ?? anomaly.area)}</span>
                     </div>
-                    <p className="text-sm text-slate-300">{anomaly.description}</p>
+                    <p className="text-sm text-slate-300">{t(anomaly.description)}</p>
                   </div>
                   <div className="text-right space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-slate-500">Confianza</span>
+                      <span className="text-xs text-slate-500">{t('Confianza')}</span>
                       <div className="w-16 h-1.5 rounded-full bg-slate-700 overflow-hidden">
                         <div
-                          className="h-full rounded-full bg-indigo-400"
+                          className="h-full rounded-full bg-sky-400"
                           style={{ width: `${anomaly.confidence * 100}%` }}
                         />
                       </div>
                       <span className="text-xs text-slate-400 w-8">{(anomaly.confidence * 100).toFixed(0)}%</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-slate-500">Calidad</span>
+                      <span className="text-xs text-slate-500">{t('Calidad')}</span>
                       <div className="w-16 h-1.5 rounded-full bg-slate-700 overflow-hidden">
                         <div
                           className="h-full rounded-full bg-emerald-400"
@@ -222,7 +232,7 @@ export default function AlertPanel({ alerts, anomalies, onAcknowledge }: Props) 
                     </div>
                     {anomaly.requiresHumanReview && (
                       <span className="inline-flex items-center gap-1 text-xs text-purple-400">
-                        <Eye size={12} /> Revisión requerida
+                        <Eye size={12} /> {t('Revisión requerida')}
                       </span>
                     )}
                   </div>
@@ -234,16 +244,16 @@ export default function AlertPanel({ alerts, anomalies, onAcknowledge }: Props) 
       </div>
 
       {/* Explanation */}
-      <div className="p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/20">
-        <h5 className="text-sm font-medium text-indigo-300 mb-2">Diferencia entre alertas y anomalías</h5>
+      <div className="p-4 rounded-xl bg-sky-500/5 border border-sky-500/20">
+        <h5 className="text-sm font-medium text-sky-300 mb-2">{t('Diferencia entre alertas y anomalías')}</h5>
         <div className="grid md:grid-cols-2 gap-4 text-xs text-slate-400">
           <div>
-            <p className="font-medium text-red-300 mb-1">Reglas de Seguridad (independientes)</p>
-            <p>Se activan automáticamente cuando se superan umbrales clínicos. No dependen de la IA. Respuesta inmediata sin esperar análisis.</p>
+            <p className="font-medium text-red-300 mb-1">{t('Reglas de Seguridad (independientes)')}</p>
+            <p>{t('Se activan automáticamente cuando se superan umbrales clínicos. No dependen de la IA. Respuesta inmediata sin esperar análisis.')}</p>
           </div>
           <div>
-            <p className="font-medium text-purple-300 mb-1">Anomalías (motor predictivo)</p>
-            <p>Detectan desviaciones del patrón individual. Incluyen estimación de confianza y calidad de datos. Siempre requieren revisión humana.</p>
+            <p className="font-medium text-purple-300 mb-1">{t('Anomalías (motor predictivo)')}</p>
+            <p>{t('Detectan desviaciones del patrón individual. Incluyen estimación de confianza y calidad de datos. Siempre requieren revisión humana.')}</p>
           </div>
         </div>
       </div>

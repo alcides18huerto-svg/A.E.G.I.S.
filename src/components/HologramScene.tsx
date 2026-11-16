@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import './HologramScene.css';
+import { useI18n } from '../i18n/LanguageContext';
 import AnatomyScene from '../hologram/anatomy/AnatomyScene';
 import {
   DEFAULT_VISIBLE,
@@ -75,6 +76,7 @@ function selectionColorFor(zones: HologramZoneState[]): SelectionColorId {
 }
 
 export default function HologramScene({ zones, onSelectZone }: Props) {
+  const { t } = useI18n();
   const [atlas, setAtlas] = useState<Atlas | null>(null);
   const [atlasError, setAtlasError] = useState<string | null>(null);
   const [sceneError, setSceneError] = useState<string | null>(null);
@@ -100,11 +102,11 @@ export default function HologramScene({ zones, onSelectZone }: Props) {
     fetch(staticAssetUrl('/models/atlas.json'), { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) {
-          throw new Error(`No se pudo descargar el catálogo anatómico (${response.status}).`);
+          throw new Error(t('No se pudo descargar el catálogo anatómico ({n}).', { n: response.status }));
         }
         const data = (await response.json()) as Atlas;
         if (!data || !Array.isArray(data.parts) || !Array.isArray(data.chunks)) {
-          throw new Error('El catálogo anatómico no tiene el formato esperado.');
+          throw new Error(t('El catálogo anatómico no tiene el formato esperado.'));
         }
         return data;
       })
@@ -113,7 +115,7 @@ export default function HologramScene({ zones, onSelectZone }: Props) {
       })
       .catch((cause: unknown) => {
         if (controller.signal.aborted) return;
-        setAtlasError(cause instanceof Error ? cause.message : 'No se pudo cargar el catálogo anatómico.');
+        setAtlasError(cause instanceof Error ? cause.message : t('No se pudo cargar el catálogo anatómico.'));
       });
     return () => controller.abort();
   }, []);
@@ -190,53 +192,53 @@ export default function HologramScene({ zones, onSelectZone }: Props) {
 
         {loading && (
           <div className="hologram-fallback" role="status">
-            <span>CARGANDO ANATOMÍA 3D…</span>
-            <span>{atlas ? `${progress}%` : 'Descargando catálogo anatómico'}</span>
+            <span>{t('CARGANDO ANATOMÍA 3D…')}</span>
+            <span>{atlas ? `${progress}%` : t('Descargando catálogo anatómico')}</span>
             <div className="hologram-progress"><i style={{ width: `${Math.max(4, progress)}%` }} /></div>
           </div>
         )}
 
         {error && (
           <div className="hologram-fallback" role="alert">
-            <span>{atlasError ? 'No se pudo cargar el holograma anatómico.' : 'El visor anatómico se detuvo.'}</span>
+            <span>{atlasError ? t('No se pudo cargar el holograma anatómico.') : t('El visor anatómico se detuvo.')}</span>
             <span className="hologram-fallback-detail">{error}</span>
             <button type="button" className="hologram-fallback-action" onClick={() => window.location.reload()}>
-              Recargar
+              {t('Recargar')}
             </button>
           </div>
         )}
 
         <div className="hologram-hud hologram-hud-top">
-          <span><i /> A.E.G.I.S. · ANATOMÍA 3D</span>
-          <span>3D / {activeZones > 0 ? 'ALERTA' : 'EN LÍNEA'}</span>
+          <span><i /> A.E.G.I.S. · {t('ANATOMÍA 3D')}</span>
+          <span>3D / {activeZones > 0 ? t('ALERTA') : t('EN LÍNEA')}</span>
         </div>
         <div className="hologram-hud hologram-hud-bottom">
-          <span>ARRASTRA PARA ROTAR · RUEDA PARA ZOOM · CLIC PARA INSPECCIONAR</span>
-          <span>{selectedPartIds.length} estructuras resaltadas</span>
+          <span>{t('ARRASTRA PARA ROTAR · RUEDA PARA ZOOM · CLIC PARA INSPECCIONAR')}</span>
+          <span>{t('{n} estructuras resaltadas', { n: selectedPartIds.length })}</span>
         </div>
 
-        <div className={`hologram-panel ${panelOpen ? 'is-open' : ''}`} aria-label="Panel de control del holograma">
-          <button type="button" className="hologram-panel-toggle" onClick={() => setPanelOpen((value) => !value)} aria-label={panelOpen ? 'Ocultar panel' : 'Mostrar panel'}>
-            {panelOpen ? '✕' : '⚙'} <span>ANATOMÍA</span>
+        <div className={`hologram-panel ${panelOpen ? 'is-open' : ''}`} aria-label={t('Panel de control del holograma')}>
+          <button type="button" className="hologram-panel-toggle" onClick={() => setPanelOpen((value) => !value)} aria-label={panelOpen ? t('Ocultar panel') : t('Mostrar panel')}>
+            {panelOpen ? '✕' : '⚙'} <span>{t('ANATOMÍA')}</span>
           </button>
           {panelOpen && (
             <div className="hologram-panel-body">
               <div className="hologram-panel-row">
-                <span>Rotación automática</span>
+                <span>{t('Rotación automática')}</span>
                 <button
                   type="button"
                   className={`hologram-toggle ${rotate ? 'is-on' : ''}`}
                   aria-pressed={rotate}
                   onClick={() => setRotate((value) => !value)}
                 >
-                  {rotate ? 'ACTIVA' : 'PAUSA'}
+                  {rotate ? t('ACTIVA') : t('PAUSA')}
                 </button>
               </div>
               <label>
-                <span>Explosión de capas · {(explode * 100).toFixed(0)}%</span>
+                <span>{t('Explosión de capas · {n}%', { n: (explode * 100).toFixed(0) })}</span>
                 <input type="range" min={0} max={1} step={0.01} value={explode} onChange={(event) => setExplode(Number(event.target.value))} />
               </label>
-              <div className="hologram-view-buttons" aria-label="Orientación de la vista">
+              <div className="hologram-view-buttons" aria-label={t('Orientación de la vista')}>
                 {VIEWS.map((option) => (
                   <button
                     key={option.id}
@@ -245,23 +247,23 @@ export default function HologramScene({ zones, onSelectZone }: Props) {
                     aria-pressed={view === option.id}
                     onClick={() => setView(option.id)}
                   >
-                    {option.label}
+                    {t(option.label)}
                   </button>
                 ))}
               </div>
               <label>
-                <span>Color de selección</span>
+                <span>{t('Color de selección')}</span>
                 <span className="hologram-panel-color">
                   <input
                     type="color"
                     value={selectionPreset.color}
                     onChange={(event) => handleSelectionColorChange(event.target.value)}
-                    aria-label="Color de selección"
+                    aria-label={t('Color de selección')}
                   />
-                  <span className="hologram-panel-color-name">{selectionPreset.name}</span>
+                  <span className="hologram-panel-color-name">{t(selectionPreset.name)}</span>
                 </span>
               </label>
-              <button type="button" className="hologram-panel-reset" onClick={handleReset}>Restablecer vista</button>
+              <button type="button" className="hologram-panel-reset" onClick={handleReset}>{t('Restablecer vista')}</button>
               <a
                 className="hologram-credit"
                 href={staticAssetUrl('/models/ATTRIBUTION-anatolume.md')}

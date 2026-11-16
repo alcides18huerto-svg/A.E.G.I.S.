@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Menu } from 'lucide-react';
+import { Menu, Siren } from 'lucide-react';
 import { useAEGIS } from '../hooks/useAEGIS';
 import Sidebar, { SECTIONS, type SectionId } from './Sidebar';
 import Overview from './Overview';
@@ -10,6 +10,8 @@ import QualityPanel from './QualityPanel';
 import ControlPanel from './ControlPanel';
 import SystemBlocksMonitor from './SystemBlocksMonitor';
 import MissionTimeline from './MissionTimeline';
+import { useI18n } from '../i18n/LanguageContext';
+import LanguageToggle from '../i18n/LanguageToggle';
 
 export default function Dashboard() {
   const {
@@ -27,6 +29,8 @@ export default function Dashboard() {
     getMissionEvents,
     exportReport,
   } = useAEGIS();
+
+  const { t } = useI18n();
 
   const [selectedCrewId, setSelectedCrewId] = useState<string>(state.crew[0]?.id || '');
   const [activeSection, setActiveSection] = useState<SectionId>('overview');
@@ -112,7 +116,7 @@ export default function Dashboard() {
         return quality ? (
           <QualityPanel quality={quality} reading={reading} />
         ) : (
-          <EmptyState message="Sin datos de calidad para el tripulante seleccionado" />
+          <EmptyState message={t('Sin datos de calidad para el tripulante seleccionado')} />
         );
       }
 
@@ -152,7 +156,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="aegis-shell min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950">
+    <div className="aegis-shell min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-sky-950">
       <Sidebar
         active={activeSection}
         onNavigate={setActiveSection}
@@ -172,26 +176,27 @@ export default function Dashboard() {
               type="button"
               onClick={() => setSidebarOpen(true)}
               className="rounded-lg border border-slate-800 bg-slate-900/70 p-2 text-slate-300 transition-colors hover:bg-slate-800 hover:text-white lg:hidden"
-              aria-label="Abrir menú de secciones"
+              aria-label={t('Abrir menú de secciones')}
             >
               <Menu size={20} />
             </button>
 
             <div className="hidden items-center gap-2 lg:flex">
-              <span className="h-1.5 w-1.5 rounded-full bg-indigo-400" />
+              <span className="h-1.5 w-1.5 rounded-full bg-sky-400" />
               <span className="text-[11px] font-medium uppercase tracking-widest text-slate-500">
-                Centro de control de misión
+                {t('Centro de control de misión')}
               </span>
             </div>
 
             <div className="ml-auto flex items-center gap-3">
+              <LanguageToggle />
               <label className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-1.5 text-xs text-slate-400">
-                <span className="hidden sm:inline">Tripulante</span>
+                <span className="hidden sm:inline">{t('Tripulante')}</span>
                 <select
                   value={selectedCrewId}
                   onChange={(event) => setSelectedCrewId(event.target.value)}
                   className="max-w-[9rem] cursor-pointer bg-transparent text-xs font-medium text-slate-200 outline-none"
-                  aria-label="Seleccionar tripulante"
+                  aria-label={t('Seleccionar tripulante')}
                 >
                   {state.crew.map((member) => (
                     <option key={member.id} value={member.id} className="bg-slate-900 text-slate-200">
@@ -206,17 +211,34 @@ export default function Dashboard() {
 
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-[1600px] space-y-6">
+            {criticalAlerts.length > 0 && (
+              <div
+                role="alert"
+                className="flex items-start gap-3 rounded-2xl border border-red-500/40 bg-red-500/10 p-4 backdrop-blur-sm"
+              >
+                <Siren className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-400" aria-hidden="true" />
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-red-300">
+                    {t('Sistema en observación · daño crítico detectado')}
+                  </p>
+                  <p className="mt-0.5 text-xs leading-relaxed text-red-200/80">
+                    {t('{n} alerta(s) crítica(s) o de emergencia sin reconocer. El motor de IA y las reglas de seguridad ya marcaron el umbral; se recomienda activar el protocolo de acción.', { n: criticalAlerts.length })}
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <p className="font-technical text-[10px] uppercase tracking-[0.24em] text-cyan-300/70">
-                  A.E.G.I.S. · {activeMeta.label}
+                  A.E.G.I.S. · {t(activeMeta.label)}
                 </p>
-                <h2 className="mt-1 text-xl font-bold text-white sm:text-2xl">{activeMeta.label}</h2>
-                <p className="text-sm text-slate-500">{activeMeta.desc}</p>
+                <h2 className="mt-1 text-xl font-bold text-white sm:text-2xl">{t(activeMeta.label)}</h2>
+                <p className="text-sm text-slate-500">{t(activeMeta.desc)}</p>
               </div>
               <div className="font-technical hidden items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-3 py-1.5 text-[11px] text-slate-400 sm:flex">
                 <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
-                Sesión segura · telemetría en vivo
+                {t('Sesión segura · telemetría en vivo')}
               </div>
             </div>
 
@@ -231,11 +253,12 @@ export default function Dashboard() {
 }
 
 function EmptyState({ message }: { message: string }) {
+  const { t } = useI18n();
   return (
     <div className="rounded-2xl glass-panel p-10 text-center">
       <div className="mb-2 text-3xl text-slate-600" aria-hidden="true">◌</div>
       <p className="text-sm text-slate-400">{message}</p>
-      <p className="mt-1 text-xs text-slate-600">El motor actualizará la vista en el próximo ciclo de telemetría</p>
+      <p className="mt-1 text-xs text-slate-600">{t('El motor actualizará la vista en el próximo ciclo de telemetría')}</p>
     </div>
   );
 }

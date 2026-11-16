@@ -1,4 +1,5 @@
 import type { EngineConfig } from '../engine/types';
+import { useI18n } from '../i18n/LanguageContext';
 
 interface Props {
   config: EngineConfig;
@@ -38,11 +39,13 @@ export default function ControlPanel({
   onExport,
   selectedCrewId,
 }: Props) {
+  const { t } = useI18n();
+
   return (
     <div className="space-y-6">
       {/* Engine controls */}
       <div className="p-6 rounded-2xl glass-panel">
-        <h4 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">Control del Motor</h4>
+        <h4 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">{t('Control del Motor')}</h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <button
             onClick={onToggleEngine}
@@ -55,8 +58,8 @@ export default function ControlPanel({
             <div className="flex items-center gap-3">
               <div className={`w-3 h-3 rounded-full ${isRunning ? 'bg-emerald-400 animate-pulse' : 'bg-slate-600'}`} />
               <div className="text-left">
-                <div className="text-sm font-medium text-slate-200">{isRunning ? 'Motor Activo' : 'Motor Pausado'}</div>
-                <div className="text-xs text-slate-500">Click para {isRunning ? 'pausar' : 'iniciar'}</div>
+                <div className="text-sm font-medium text-slate-200">{isRunning ? t('Motor Activo') : t('Motor Pausado')}</div>
+                <div className="text-xs text-slate-500">Click para {isRunning ? t('pausar') : t('iniciar')}</div>
               </div>
             </div>
           </button>
@@ -72,8 +75,8 @@ export default function ControlPanel({
             <div className="flex items-center gap-3">
               <div className={`w-3 h-3 rounded-full ${isOnline ? 'bg-cyan-400' : 'bg-amber-400'}`} />
               <div className="text-left">
-                <div className="text-sm font-medium text-slate-200">{isOnline ? 'En línea (Tierra)' : 'Offline (Autónomo)'}</div>
-                <div className="text-xs text-slate-500">Click para {isOnline ? 'desconectar' : 'reconectar'}</div>
+                <div className="text-sm font-medium text-slate-200">{isOnline ? t('En línea (Tierra)') : t('Offline (Autónomo)')}</div>
+                <div className="text-xs text-slate-500">Click para {isOnline ? t('desconectar') : t('reconectar')}</div>
               </div>
             </div>
           </button>
@@ -82,8 +85,7 @@ export default function ControlPanel({
         {!isOnline && (
           <div className="mt-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
             <p className="text-xs text-amber-300">
-              <span className="font-medium">Modo offline activo:</span> Las funciones críticas (captura, calidad, análisis, alertas) continúan operando. 
-              La sincronización con Tierra está en cola.
+              <span className="font-medium">{t('Modo offline activo:')}</span> {t('Las funciones críticas (captura, calidad, análisis, alertas) continúan operando. La sincronización con Tierra está en cola.')}
             </p>
           </div>
         )}
@@ -91,11 +93,11 @@ export default function ControlPanel({
 
       {/* Configuration */}
       <div className="p-6 rounded-2xl glass-panel">
-        <h4 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">Configuración del Sistema</h4>
+        <h4 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">{t('Configuración del Sistema')}</h4>
         <div className="space-y-4">
           <div>
             <label className="flex items-center justify-between text-sm text-slate-400 mb-2">
-              <span>Ruido de sensores</span>
+              <span>{t('Ruido de sensores')}</span>
               <span className="text-slate-500">{(config.sensorNoiseLevel * 100).toFixed(0)}%</span>
             </label>
             <input
@@ -104,12 +106,12 @@ export default function ControlPanel({
               max="50"
               value={config.sensorNoiseLevel * 100}
               onChange={(e) => onUpdateConfig({ sensorNoiseLevel: Number(e.target.value) / 100 })}
-              className="w-full h-2 rounded-full bg-slate-700 appearance-none cursor-pointer accent-indigo-500"
+              className="w-full h-2 rounded-full bg-slate-700 appearance-none cursor-pointer accent-sky-500"
             />
           </div>
           <div>
             <label className="flex items-center justify-between text-sm text-slate-400 mb-2">
-              <span>Tasa de fallo de sensores</span>
+              <span>{t('Tasa de fallo de sensores')}</span>
               <span className="text-slate-500">{(config.faultInjectionRate * 100).toFixed(1)}%</span>
             </label>
             <input
@@ -118,7 +120,7 @@ export default function ControlPanel({
               max="20"
               value={config.faultInjectionRate * 100}
               onChange={(e) => onUpdateConfig({ faultInjectionRate: Number(e.target.value) / 100 })}
-              className="w-full h-2 rounded-full bg-slate-700 appearance-none cursor-pointer accent-indigo-500"
+              className="w-full h-2 rounded-full bg-slate-700 appearance-none cursor-pointer accent-sky-500"
             />
           </div>
         </div>
@@ -126,23 +128,22 @@ export default function ControlPanel({
 
       {/* Anomaly injection */}
       <div className="p-6 rounded-2xl glass-panel">
-        <h4 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-2">Inyección de Anomalías</h4>
+        <h4 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-2">{t('Inyección de Anomalías')}</h4>
         <p className="text-xs text-slate-500 mb-4">
-          Simula condiciones fisiológicas o ambientales para probar el sistema. 
-          Los datos inyectados serán procesados por todas las etapas del pipeline.
+          {t('Simula condiciones fisiológicas o ambientales para probar el sistema. Los datos inyectados serán procesados por todas las etapas del pipeline.')}
         </p>
-        <div className="mb-3 p-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
-          <span className="text-xs text-indigo-300">Tripulante seleccionado: <span className="font-mono">{selectedCrewId}</span></span>
+        <div className="mb-3 p-2 rounded-lg bg-sky-500/10 border border-sky-500/20">
+          <span className="text-xs text-sky-300">{t('Tripulante seleccionado:')} <span className="font-mono">{selectedCrewId}</span></span>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
           {anomalyTypes.map((type) => (
             <button
               key={type.id}
               onClick={() => onInjectAnomaly(selectedCrewId, type.id)}
-              className="p-3 rounded-xl bg-slate-800/50 border border-slate-700 hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all text-left group"
+              className="p-3 rounded-xl bg-slate-800/50 border border-slate-700 hover:border-sky-500/50 hover:bg-sky-500/10 transition-all text-left group"
             >
-              <div className="text-sm font-medium text-slate-200 group-hover:text-indigo-300">{type.label}</div>
-              <div className="text-xs text-slate-500 mt-0.5">{type.desc}</div>
+              <div className="text-sm font-medium text-slate-200 group-hover:text-sky-300">{t(type.label)}</div>
+              <div className="text-xs text-slate-500 mt-0.5">{t(type.desc)}</div>
             </button>
           ))}
         </div>
@@ -150,14 +151,14 @@ export default function ControlPanel({
 
       {/* Reports */}
       <div className="p-6 rounded-2xl glass-panel">
-        <h4 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-2">Informes y auditoría</h4>
+        <h4 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-2">{t('Informes y auditoría')}</h4>
         <p className="text-xs text-slate-500 mb-4">
-          Exporta una instantánea JSON con referencias individuales, dosis acumulada, modelo óseo, índices de riesgo, alertas y telemetría del pipeline.
+          {t('Exporta una instantánea JSON con referencias individuales, dosis acumulada, modelo óseo, índices de riesgo, alertas y telemetría del pipeline.')}
         </p>
         <button
           type="button"
           onClick={onExport}
-          className="inline-flex items-center gap-2 rounded-xl border border-indigo-500/40 bg-indigo-500/10 px-4 py-2.5 text-sm font-medium text-indigo-200 transition-colors hover:bg-indigo-500/20"
+          className="inline-flex items-center gap-2 rounded-xl border border-sky-500/40 bg-sky-500/10 px-4 py-2.5 text-sm font-medium text-sky-200 transition-colors hover:bg-sky-500/20"
         >
           <span aria-hidden="true">⤓</span>
           Descargar informe de misión

@@ -12,6 +12,7 @@ import { RADIATION_LIMITS } from '../engine/thresholds';
 import type { SectionId } from './Sidebar';
 import SystemHealthBar from './SystemHealthBar';
 import CrewOverview from './CrewOverview';
+import { useI18n } from '../i18n/LanguageContext';
 
 interface Props {
   crew: CrewMember[];
@@ -42,6 +43,7 @@ export default function Overview({
   syncQueue,
   onNavigate,
 }: Props) {
+  const { t } = useI18n();
   const shortcuts: { id: SectionId; label: string; detail: string; icon: typeof Scan }[] = [
     { id: 'hologram', label: 'Holograma', detail: '3D y signos vitales', icon: Scan },
     { id: 'sensors', label: 'Sensores', detail: 'Series temporales', icon: Activity },
@@ -81,9 +83,9 @@ export default function Overview({
             <div className="mb-4 flex items-end justify-between gap-3">
               <div>
                 <h3 className="font-technical text-sm font-semibold uppercase tracking-wider text-slate-300">
-                  Accesos a módulos
+                  {t('Accesos a módulos')}
                 </h3>
-                <p className="mt-1 text-xs text-slate-500">Navegación directa a las áreas de análisis</p>
+                <p className="mt-1 text-xs text-slate-500">{t('Navegación directa a las áreas de análisis')}</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -100,8 +102,8 @@ export default function Overview({
                       <Icon size={17} />
                     </span>
                     <span className="min-w-0">
-                      <span className="block truncate text-sm font-medium text-slate-200">{shortcut.label}</span>
-                      <span className="block truncate text-[11px] text-slate-500">{shortcut.detail}</span>
+                      <span className="block truncate text-sm font-medium text-slate-200">{t(shortcut.label)}</span>
+                      <span className="block truncate text-[11px] text-slate-500">{t(shortcut.detail)}</span>
                     </span>
                   </button>
                 );
@@ -121,6 +123,7 @@ function RadiationExposure({
   crew: CrewMember[];
   radiationProfiles: Map<string, RadiationProfile>;
 }) {
+  const { t } = useI18n();
   const limit = RADIATION_LIMITS.careerLimitMsv;
 
   return (
@@ -128,14 +131,14 @@ function RadiationExposure({
       <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
         <div>
           <h3 className="font-technical text-sm font-semibold uppercase tracking-wider text-slate-300">
-            Dosis de carrera · ALARA
+            {t('Dosis de carrera · ALARA')}
           </h3>
           <p className="mt-1 text-xs text-slate-500">
-            Exposición acumulada por tripulante frente al límite de {limit} mSv
+            {t('Exposición acumulada por tripulante frente al límite de {n} mSv', { n: limit })}
           </p>
         </div>
-        <span className="font-technical rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-[11px] text-indigo-200">
-          Límite {limit} mSv
+        <span className="font-technical rounded-full border border-sky-500/30 bg-sky-500/10 px-3 py-1 text-[11px] text-sky-200">
+          {t('Límite {n} mSv', { n: limit })}
         </span>
       </div>
 
@@ -145,7 +148,7 @@ function RadiationExposure({
           const rawTotal = Number(profile?.preflightPriorMsv ?? 0) + Number(profile?.cumulativeDoseMsv ?? 0);
           const total = Number.isFinite(rawTotal) ? rawTotal : 0;
           const pct = limit > 0 ? Math.min(100, Math.max(0, (total / limit) * 100)) : 0;
-          const tone = pct >= 80 ? 'bg-red-400' : pct >= 60 ? 'bg-orange-400' : 'bg-indigo-400';
+          const tone = pct >= 80 ? 'bg-red-400' : pct >= 60 ? 'bg-orange-400' : 'bg-sky-400';
 
           return (
             <div key={member.id}>

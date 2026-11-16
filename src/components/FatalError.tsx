@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { ErrorInfo } from 'react';
+import { useI18n } from '../i18n/LanguageContext';
 
 const panelStyle = {
   width: '100%',
@@ -48,6 +49,7 @@ interface Props {
 }
 
 export default function FatalError({ error, info }: Props) {
+  const { t } = useI18n();
   const [copied, setCopied] = useState(false);
   const details = [error.message, error.stack, info?.componentStack]
     .filter((part): part is string => Boolean(part))
@@ -78,10 +80,10 @@ export default function FatalError({ error, info }: Props) {
     >
       <div style={panelStyle} role="alert">
         <p style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: '#ffffff' }}>
-          A.E.G.I.S. no pudo iniciar
+          {t('A.E.G.I.S. no pudo iniciar')}
         </p>
         <p style={{ margin: '0.5rem 0 0', fontSize: '0.78rem', lineHeight: 1.5, color: '#94a3b8' }}>
-          Se produjo un error al cargar la interfaz. Puedes restablecer los datos locales o recargar la página.
+          {t('Se produjo un error al cargar la interfaz. Puedes restablecer los datos locales o recargar la página.')}
         </p>
         <p
           style={{
@@ -95,11 +97,11 @@ export default function FatalError({ error, info }: Props) {
             overflowWrap: 'anywhere',
           }}
         >
-          {error.message || 'Error desconocido'}
+          {error.message || t('Error desconocido')}
         </p>
         <details style={{ marginTop: '0.85rem' }}>
           <summary style={{ cursor: 'pointer', fontSize: '0.75rem', color: '#67e8f9' }}>
-            Ver detalles técnicos
+            {t('Ver detalles técnicos')}
           </summary>
           <pre
             style={{
@@ -121,13 +123,13 @@ export default function FatalError({ error, info }: Props) {
         </details>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '1rem' }}>
           <button type="button" onClick={() => window.location.reload()} style={primaryButton}>
-            Recargar
+            {t('Recargar')}
           </button>
           <button type="button" onClick={resetAegisData} style={secondaryButton}>
-            Restablecer datos y recargar
+            {t('Restablecer datos y recargar')}
           </button>
           <button type="button" onClick={copyDetails} style={secondaryButton}>
-            {copied ? 'Copiado' : 'Copiar detalles'}
+            {copied ? t('Copiado') : t('Copiar detalles')}
           </button>
         </div>
       </div>

@@ -33,7 +33,10 @@ const EXACT: Record<string, string> = {
   "skin": "Piel",
 };
 
-export function partLabel(name: string): string {
+export type AnatomyLang = "es" | "en";
+
+export function partLabel(name: string, lang: AnatomyLang = "es"): string {
+  if (lang === "en") return name;
   const normalized = name.trim().toLowerCase();
   if (EXACT[normalized]) return EXACT[normalized];
   for (const [english, spanish] of Object.entries(EXACT)) {
